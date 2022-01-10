@@ -1,0 +1,364 @@
+# -----------------------------------------------------------------------------------------------
+# Package Multinotify - Ver. 2.0.1 - PRELIMINARY - VIETATA LA DIFFUSIONE!
+# Descrizione: script multinotify per gestire l'invio di messaggi alle app e ai dispositivi 
+#              Alexa con un unica azione. I dispositivi Alexa metteranno in paura l'eventuale
+#              musica, imposteranno il volume specificato (o 0.6 se non specificato), 
+#              riprodurranno il messaggio e infine riprenderanno la riproduzione, se era in corso
+#              e infine ripristineranno il volume precedente.
+# -----------------------------------------------------------------------------------------------
+# Autore: Henrik Sozzi
+# sito: https://henriksozzi.it
+# -----------------------------------------------------------------------------------------------
+# CHANGELOG
+# Ver. 1.0 - 30/03/2021
+#   - Prima versione pubblicata qui: https://henriksozzi.it/2021/03/script-con-parametri-opzionali-in-home-assistant/
+# Ver. 2.0 - 25/11/2021
+#   - Resa parametrica la lista dei dispositivi da processare per il volume (costato tanto sonno)
+#   - Aggiunto Pausa / Play della musica (idea di Massimiliano Albani, grazie!!!) per evitare
+#     che l'aumento del volume comporti un breve aumento anche della musica poco piacevole.
+#   - Aggiunto delay calcolato in base alla frase così che il ripristino del volume ed eventuali
+#     azioni seguenti al richiamo dello script avvengano dopo il termine dell'annuncio
+#     (ad esempio è ora possibile far dire ad Alexa "...ora ti alzo le tapparelle" e alzarle)
+#   - Impostato attributo volume_level forzatamente ad ogni cambio, così che quando capita
+#     che il websocket di Alexa Media Player venga perso il volume sia comunque corretto
+#     Ref: https://github.com/custom-components/alexa_media_player/issues/1429
+# Ver. 2.0.1 - 10/12/2021
+#   - Modificata modalità in queued max 10 per permettere l'accodamento di più messaggi
+# -----------------------------------------------------------------------------------------------
+# Distribuito con licenza: CC BY-NC-SA 4.0
+# Formato leggibile da un essere umano: https://creativecommons.org/licenses/by-nc-sa/4.0/deed.it
+# Formato per gli avvocati: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+# -----------------------------------------------------------------------------------------------
+# Requisiti:
+#  - Alexa Media Player (solo per notifiche Alexa): https://github.com/custom-components/alexa_media_player
+#  - App Companion collegate (solo per notifiche app): https://companion.home-assistant.io/
+#  - Script set_state specifico (solo per notifiche Alexa): 
+#     - https://github.com/xannor/hass_py_set_state
+#     oppure
+#     - https://henriksozzi.it/2021/04/impostare-lo-stato-di-unentita-in-home-assistant/
+#     ATTENZIONE! Lo script sul sito henriksozzi.it è stato aggiornato il 10/1/2022 con la versione che permette
+#     la creazione di nuove entità! Se hai set_state da prima di questa data o da un'altro sito verifica che sia
+#     la versione corretta, altrimenti non funzionerà!
+
+# multinotify
+# ------------------------------------------
+# service: script.multinotify
+# data:
+#   message: Ciao! Questo messaggio sarà riprodotto ovunque
+#   alexa_target: media_player.ovunque
+
+# Nota: in alexa_target è possibile passare:
+#  - Una singola entità Alexa
+#      alexa_target: media_player
+#  - Un elenco di entità Alexa
+#      alexa_target:
+#        - media_player.Alexa1
+#        - media_player.Alexa2
+#  - Un gruppo Home Assistant di Alexa
+#      alexa_target: group.all_alexa
+#  - Un gruppo Alexa nativo (necessario che esista un gruppo Home Assistant con pari nome e contenente le Alexa facenti parte del gruppo)
+#      alexa_target: media_player.gruppo1
+#  - L'entità speciale ovunque o everywhere (necessario che esista il gruppo group.all_alexa contenente tutti i device Alexa)
+#      alexa_target: media_player.ovunque
+
+group:
+  # Gruppo contenente tutti i device Echo presenti (necessario per utilizzare media_player.ovunque come target di multinotify)
+  all_alexa:
+    name: Tutti i device Echo
+    entities:
+      # TODO: modificare l'elenco delle entità del gruppo con i propri dispositivi Alexa
+      - media_player.pian_terreno
+      - media_player.primo_piano
+      - media_player.mansarda
+  # TODO: Definire un gruppo per ogni gruppo interno di Alexa. Per esempio al gruppo media_player.miogruppo dovrà corrispondere
+  #       il gruppo group.miogruppo contenente gli stessi dispositivi. Rimuovere l'esempio piani_superiori.
+  piani_superiori:
+    name: Device Echo dei piani superiori
+    entities:
+      - media_player.primo_piano
+      - media_player.mansarda
+
+notify:
+  # Gruppo notify.all_devices da utilizzare in multinotify per inviare una notifica a tutte le app
+  - name: all_devices
+    platform: group
+    services:
+      # TODO: modificare l'elenco dei servizi con i propri servizi di invio notifica alle app Home Assistant Companion collegate
+      - service: mobile_app_tel_henrik
+      - service: mobile_app_smartphone_antonella
+
+
+
+
+
+
+
+
+# ------------------------------------ NON MODIFICARE OLTRE QUESTA RIGA ------------------------------------
+
+script:
+  # AD USO INTERNO. Viene chiamato per ogni entità Alexa PRIMA del messaggio di notifica
+  multinotify_alexa_pre:
+    alias: "Gestione singola Alexa PRE"
+    description: "Processa la singola Alexa nel ciclo di Multinotify prima dell'annuncio. Non è pensata per l'utilizzo da parte dell'utente"
+    fields: 
+      target:
+        name: "Entità Alexa"
+        description: "Entità singola di Alexa da processare"
+      volume:
+        name: "Volume da impostare"
+        description: "Volume da impostare (sarà impostato 0.6 se non specificato)"
+    sequence:
+      - alias: "Imposto prev volume"
+        service: python_script.set_state
+        data:
+          entity_id: "tmp.alexa_{{ target | regex_findall('\\.(\\w+)') | first }}_prev_volume"
+          state: "{{state_attr(target, 'volume_level')}}"
+          was_playing: "{{states[target].state == 'playing'}}"
+          allow_create: true
+      - alias: "Alexa era in riproduzione?"
+        choose:
+        - conditions: "{{states[target].state == 'playing'}}"
+          sequence:
+            - alias: "Metto in pausa Alexa"
+              service: media_player.media_pause
+              target:
+                entity_id: "{{target}}"
+      - alias: "Imposta volume desiderato"
+        service: media_player.volume_set
+        target:
+          entity_id: "{{target}}"
+        data:
+          volume_level: "{{volume | default(0.6) | round(2)}}"
+      - alias: "Workaround per aggiornare sempre volume_level di Alexa"
+        service: python_script.set_state
+        data:
+          entity_id: "{{target}}"
+          volume_level: "{{volume | default(0.6) | round(2)}}"
+
+  # AD USO INTERNO. Viene chiamato per ogni entità Alexa DOPO il messaggio di notifica
+  multinotify_alexa_post:
+    alias: "Gestione singola Alexa POST"
+    description: "Processa la singola Alexa nel ciclo di Multinotify dopo l'annuncio. Non è pensata per l'utilizzo da parte dell'utente"
+    fields: 
+      target:
+        name: "Entità Alexa"
+        description: "Entità singola di Alexa da processare"
+    sequence:
+      - variables:
+          object_id: "{{target | regex_findall('\\.(\\w+)') | first}}"
+          prev_vol: "tmp.alexa_{{object_id}}_prev_volume"
+          was_playing: "{{state_attr(prev_vol, 'was_playing')}}"
+      - alias: "Imposta volume precedente"
+        service: media_player.volume_set
+        target:
+          entity_id: "{{target}}"
+        data:
+          volume_level: "{{states(prev_vol)}}"
+      - alias: "Workaround per aggiornare sempre volume_level di Alexa"
+        service: python_script.set_state
+        data:
+          entity_id: "{{target}}"
+          volume_level: "{{states(prev_vol)}}"
+
+      - alias: "Se era in riproduzione precedentemente ripristino la riproduzione"
+        choose:
+        - conditions: "{{was_playing}}"
+          sequence:
+            - alias: "Attesa per lasciare applicare il volume ad Alexa"
+              delay: 2
+            - alias: "Ripristina riproduzione"
+              service: media_player.media_play
+              target:
+                entity_id: "{{target}}"
+
+  # Notifica intelligente App / Alexa
+  multinotify:
+    alias: 'Notifica intelligente'
+    description: 'Inva una notifica alle app e ad Alexa, con gestione musica, volume e relativo ripristino oltre all''attesa di un tempo pari a quello dell''annuncio'
+    mode: queued
+    max: 10
+    fields:
+      title:
+        name: 'Titolo'
+        description: 'Titolo della notifica'
+        selector:
+          text:
+        example: 'Avviso importante'
+      message:
+        name: 'Messaggio'
+        description: 'Testo da notificare che verrà letto ed inviato come corpo della notifica'
+        selector:
+          text:
+        example: 'Un dispositivo non sta funzionando'
+        required: true
+      alexa_message:
+        name: 'Messaggio Alexa (se diverso)'
+        description: 'Testo che Alexa dovrà pronunciare, se differente da message. Se non specificato verrà usato message.'
+        selector:
+          text:
+        example: '<say-as interpret-as="interjection">yippii</say-as>. Questo verrebbe male nelle notifiche dell''app!'
+      alexa_target:
+        name: 'Target Alexa'
+        description: 'Dispositivo, elenco di dispositivi, gruppo Home Assistant, gruppo Alexa o entity speciale ovunque a cui inviare la notifica'
+        selector:
+          entity:
+            integration: alexa_media
+            domain: media_player
+        example: 'media_player.ovunque'
+      alexa_volume:
+        name: 'Volume Alexa'
+        description: "Volume che si desidera impostare per l'annuncio sui dispositivi Alexa indicati da alexa_target"
+        example: "0.6"
+        selector:
+          number:
+            min: 0
+            max: 1
+            step: 0.1
+            mode: 'slider'
+      alexa_force:
+        name: 'Forza Alexa'
+        description: "True per forzare la notifica Alexa al di fuori dell'orario, False o non definita per riprodurre la notifica Alexa solo in orario consono"
+        selector:
+          boolean:
+        example: 'false'
+      notify_app:
+        name: 'Servizio notifica app'
+        description: "Il nome del servizio di notifica app o non compilare per non inviare notifiche all'app"
+        selector:
+          entity:
+            domain: notify
+        example: 'notify.all_devices'
+      group:
+        name: 'Gruppo app'
+        description: 'Stringa identificativa del gruppo di notifiche. Sul telefono le notifiche saranno raggruppate in base a questo valore. Se non specificato sarà usato channel o "info"'
+        selector:
+          text:
+        example: 'alarm'
+      channel:
+        name: 'Canale app'
+        description: 'Stringa identificativa del canale, ovvero il gruppo di notifiche con impostazioni a se stanti sul telefono. Se non specificato sarà usato group o "info"'
+        selector:
+          text:
+        example: 'Generic'
+      icon:
+        name: 'Icona app'
+        description: 'nome del file (senza percorso, senza notify_ e senza estensione) che deve essere usato da mostrare nella notifica. nell''esempio "warning" diventerà "/local/notify_warning.png". Se non specificato userà channel, group o "info"'
+        selector:
+          text:
+        example: 'warning'
+      tag:
+        name: 'Tag app'
+        description: "Campo tag della notifica ad app. Se impostato sul telefono l'eventuale notifica sarà sostituita alla seguente con tag uguale"
+        selector:
+          text:
+        example: 'fulmini'
+      critical:
+        name: 'Critical app'
+        description: 'impostare a "true" per inviare una notifica immediata. Se "false" o non specificata la notifica sarà riprodotta quando verrà sbloccato il telefono (default: true)'
+        selector:
+          boolean:
+        example: 'true'
+    sequence:
+      # Sezione messaggio all'app
+      - alias: "Notifica App"
+        choose:
+        - alias: "notify_app è stato passato dal chiamante?"
+          conditions: "{{ notify_app is defined }}"
+          sequence:
+            - service: '{{notify_app}}'
+              data:
+                title: "{{title | default('Notifica da casa')}}"
+                message: "{{message}}"
+                data:
+                  group: "{{group | default(channel) | default('info')}}"
+                  channel: "{{channel | default(group) | default('info')}}"
+                  tag: "{{tag | default('')}}"
+                  icon_url: "/local/notify_{{icon | default(channel) | default(group) | default('info')}}.png"
+                  ttl: "{{0 if (critical | default(true)) else 86400}}"
+                  priority: "{{'high' if (critical | default(true)) else 'normal'}}"
+          
+      # Sezione messaggio Alexa      
+      - alias: "Notifica Alexa"
+        choose:
+          - conditions:
+              - alias: "alexa_target è stato passato dal chiamante?"
+                condition: template
+                value_template: "{{ alexa_target is defined }}"
+              - alias: "Orario diurno oppure alexa_force = true"
+                condition: or
+                conditions:
+                  - condition: template
+                    value_template: "{{ alexa_force | default(false)}}"
+                  - condition: time
+                    after: '09:00:00'
+                    before: '23:00:00'
+            sequence:
+              # script.multinotify_pre: salvo volume precedente, imposto volume e metto in pausa eventuale musica su tutti i dispositivi Alexa coinvolti
+              - variables:
+                  list: >
+                    {% set object_id = alexa_target | regex_findall('\\.(\\w+)') | first %}
+                    {% if not alexa_target is string %}
+                      {# Elenco di entità inline #}
+                      {{alexa_target | join(',')}}
+                    {% elif alexa_target.startswith('group.') %}
+                      {# Gruppo di Echo definito in Home Assistant #}
+                      {{expand(states[alexa_target]) | join(',', attribute='entity_id')}}
+                    {% elif alexa_target == ('media_player.ovunque') or alexa_target.endswith('media_player.everywhere') %}
+                      {# Tutti gli Echo contemporaneamente #}
+                      {{expand(states.group.all_alexa) | join(',', attribute='entity_id')}}
+                    {% elif alexa_target.startswith('media_player.') and states['group.' ~ object_id] != None %}
+                      {# Gruppo di Echo definito in Alexa (necessario un gruppo Home Assistant corrispondente con lo stesso nome!) #}
+                      {{expand(states['group.' ~ object_id]) | join(',', attribute='entity_id')}}
+                    {% elif alexa_target.startswith('media_player.') %}
+                      {# Singola entità Echo #}
+                      {{alexa_target}}
+                    {% endif %}
+                  count: "{{list.split(',') | count}}"
+              - repeat:
+                  while: "{{ repeat.index <= count }}"
+                  sequence:
+                    - variables:
+                        entity_id: "{{list.split(',')[repeat.index-1]}}"
+                    - service: script.multinotify_alexa_pre
+                      data:
+                        target: "{{entity_id}}"
+                        volume: "{{alexa_volume | default(0.6)}}"
+
+              # Notifica vera e propria
+              - variables:
+                  message: "{{alexa_message | default(message)}}"
+              - service: notify.alexa_media
+                data:  
+                  message: "{{message}}"
+                  data:
+                    type: announce
+                  target: "{{alexa_target}}"
+              - delay:
+                  seconds: "{{(5 + (message.count(', ') + message.count('. ') + message.count('! ') + message.count('? ') + message.count(': ') + message.count('; ')) | float * 0.35 + (message | length) * 0.06) | round(default=0)}}"
+
+              # script.multinotify_post: ripristino volume precedente e riproduzione musica, se era in corso, su tutti i dispositivi Alexa coinvolti
+              - repeat:
+                  while: "{{ repeat.index <= count }}"
+                  sequence:
+                    - variables:
+                        entity_id: "{{list.split(',')[repeat.index-1]}}"
+                    - service: script.multinotify_alexa_post
+                      data:
+                        target: "{{entity_id}}"
+
+automation:
+  # Risolve il bug di attributo volume_level non presente all'avvio di Home Assistant
+  # Ref: https://github.com/custom-components/alexa_media_player/issues/1394
+  - id: 2d897264-e05c-46bd-ba23-772fbeeab7be
+    alias: "Alexa - Evento - Reimposta volume all'avvio di Home Assistant"
+    trigger:
+      - platform: homeassistant
+        event: start
+    action:
+      - alias: "Imposta il volume al 60%"
+        service: media_player.volume_set
+        target:
+          entity_id: group.all_alexa
+        data:
+          volume_level: 0.6
