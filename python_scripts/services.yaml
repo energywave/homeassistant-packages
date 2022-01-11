@@ -1,0 +1,15 @@
+# set_state.py
+set_state:
+  description: Imposta lo stato e/o gli attributi di una entità ai valori desiderati
+  fields:
+    entity_id:
+      description: Nome completo dell'entità da aggiornare
+      example: device_tracker.mio_tracker
+    state:
+      description: Nuovo valore dello stato dell'entità (opzionale)
+      example: not_home
+    allow_create:
+      description: Specifica se permettere di creare nuove entità (default=false, così se si sbaglia a scrivere non vengono create entità errate)
+      example: false
+    other:
+      description: Qualunque altro valore verrà impostato negli attributi dell'entità. Se l'attributo non esiste verrà creato.
