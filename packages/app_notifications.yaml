@@ -1,0 +1,104 @@
+# -----------------------------------------------------------------------------------------------
+# Package app_notifications - Ver. 1.0
+# Descrizione: automazioni per utilizzare le notifiche delle app di Deliveroo, Glovo e JustEat
+#              che, rilevate tramite l'app companion installata su un telefono Android, vengono
+#              notificate tramite Alexa e tutte le app companion.
+# -----------------------------------------------------------------------------------------------
+# Autore: Henrik Sozzi
+# sito: https://henriksozzi.it
+# -----------------------------------------------------------------------------------------------
+# CHANGELOG
+# Ver. 1.0 - 28/01/2022
+#   - Prima versione pubblicata qui: https://henriksozzi.it/2021/03/script-con-parametri-opzionali-in-home-assistant/
+# -----------------------------------------------------------------------------------------------
+# Distribuito con licenza: CC BY-NC-SA 4.0
+# Formato leggibile da un essere umano: https://creativecommons.org/licenses/by-nc-sa/4.0/deed.it
+# Formato per gli avvocati: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+# -----------------------------------------------------------------------------------------------
+# Requisiti:
+#  - App Companion collegate: https://companion.home-assistant.io/
+#  - In App Companion è necessario abilitare il sensore "ultima_notifica" abilitandolo poi le tre app:
+#    - com.deliveroo.orderapp 
+#    - com.glovo
+#    - com.justeat.app.it
+
+
+# Modifica la stringa sensor.tel_henrik_ultima_notifica con il nome del sensore ultima_notifica della tua app
+homeassistant:
+  customize:
+    package.node_anchors:
+      entity_id: &notify_entity_id sensor.tel_henrik_ultima_notifica
+
+
+
+
+# ------------------------------------ NON MODIFICARE OLTRE QUESTA RIGA ------------------------------------
+automation:
+  #Ricezione notifiche da Deliveroo
+  - id: 50188629-f6d0-4120-bef3-704ec7d7b561
+    alias: 'App - Notifica - Deliveroo'
+    description: "Notifica gli aggiornamenti sugli ordini di Deliveroo tramite Alexa e tutte le app"
+    trigger_variables:
+      ultima_notifica: *notify_entity_id
+    variables:
+      ultima_notifica: *notify_entity_id
+    trigger:
+      - platform: template
+        value_template: "{{states(ultima_notifica)!='unavailable' and is_state_attr(ultima_notifica, 'package', 'com.deliveroo.orderapp')}}"
+    action:
+      - alias: "Invia notifica ad Alexa e tutte le app"
+        service: script.multinotify
+        data:
+          message: "Notifica da Deliveroo: {{state_attr(ultima_notifica, 'android.title')}}. {{states(ultima_notifica)}}"
+          notify_app: notify.all_devices
+          channel: meal
+          group: meal
+          icon: meal
+          critical: true
+          alexa_target: media_player.ovunque
+
+  #Ricezione notifiche da Glovo
+  - id: 8524bbe6-243d-4377-a979-c1e1d2fd6569
+    alias: 'App - Notifica - Glovo'
+    description: "Notifica gli aggiornamenti sugli ordini di Glovo tramite Alexa e tutte le app"
+    trigger_variables:
+      ultima_notifica: *notify_entity_id
+    variables:
+      ultima_notifica: *notify_entity_id
+    trigger:
+      - platform: template
+        value_template: "{{states(ultima_notifica)!='unavailable' and is_state_attr(ultima_notifica, 'package', 'com.glovo')}}"
+    action:
+      - alias: "Invia notifica ad Alexa e tutte le app"
+        service: script.multinotify
+        data:
+          message: "Notifica da Glovo: {{state_attr(ultima_notifica, 'android.text')}}."
+          notify_app: notify.all_devices
+          channel: meal
+          group: meal
+          icon: meal
+          critical: true
+          alexa_target: media_player.ovunque
+  
+  #Ricezione notifiche da JustEat
+  - id: 43b64b8a-1757-4745-9703-56c1a62b45bb
+    alias: 'App - Notifica - Justeat'
+    description: "Notifica gli aggiornamenti sugli ordini di JustEat tramite Alexa e tutte le app"
+    trigger_variables:
+      ultima_notifica: *notify_entity_id
+    variables:
+      ultima_notifica: *notify_entity_id
+    trigger:
+      - platform: template
+        value_template: "{{states(ultima_notifica)!='unavailable' and is_state_attr(ultima_notifica, 'package', 'com.justeat.app.it')}}"
+    action:
+      - alias: "Invia notifica ad Alexa e tutte le app"
+        service: script.multinotify
+        data:
+          message: "Notifica da Justeat: {{state_attr(ultima_notifica, 'android.title')}}. {{states(ultima_notifica)}}"
+          notify_app: notify.all_devices
+          channel: meal
+          group: meal
+          icon: meal
+          critical: true
+          alexa_target: media_player.ovunque
