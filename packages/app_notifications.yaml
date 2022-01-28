@@ -1,26 +1,28 @@
-# -----------------------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------------------
 # Package app_notifications - Ver. 1.0
 # Descrizione: automazioni per utilizzare le notifiche delle app di Deliveroo, Glovo e JustEat
 #              che, rilevate tramite l'app companion installata su un telefono Android, vengono
 #              notificate tramite Alexa e tutte le app companion.
-# -----------------------------------------------------------------------------------------------
+# Articolo: https://henriksozzi.it/2022/01/notifiche-da-deliveroo-glovo-e-justeat-in-home-assistant
+# -------------------------------------------------------------------------------------------------
 # Autore: Henrik Sozzi
 # sito: https://henriksozzi.it
-# -----------------------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------------------
 # CHANGELOG
 # Ver. 1.0 - 28/01/2022
-#   - Prima versione pubblicata qui: https://henriksozzi.it/2021/03/script-con-parametri-opzionali-in-home-assistant/
-# -----------------------------------------------------------------------------------------------
+#   - Prima versione 
+# -------------------------------------------------------------------------------------------------
 # Distribuito con licenza: CC BY-NC-SA 4.0
 # Formato leggibile da un essere umano: https://creativecommons.org/licenses/by-nc-sa/4.0/deed.it
 # Formato per gli avvocati: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
-# -----------------------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------------------
 # Requisiti:
 #  - App Companion collegate: https://companion.home-assistant.io/
 #  - In App Companion è necessario abilitare il sensore "ultima_notifica" abilitandolo poi le tre app:
 #    - com.deliveroo.orderapp 
 #    - com.glovo
 #    - com.justeat.app.it
+#  - Package multinotify per le notifiche: https://henriksozzi.it/2022/01/package-multinotify-notifiche-su-alexa-e-app/
 
 
 # Modifica la stringa sensor.tel_henrik_ultima_notifica con il nome del sensore ultima_notifica della tua app
