@@ -1,0 +1,34 @@
+template:
+  - trigger:
+      - platform: time_pattern
+        hours: 0
+        minutes: 0
+      - platform: homeassistant
+        event: start
+    sensor:
+      - name: "Compleanno"
+        state: >
+          {% if now().day == 1 and now().month == 2 %}
+            Ilaria
+          {% elif now().day == 3 and now().month == 4 %}
+            Erica
+          {% elif now().day == 5 and now().month == 6 %}
+            Antonella
+          {% elif now().day == 7 and now().month == 8 %}
+            Henrik
+          {% else %}
+            none
+          {% endif %}
+      - name: "Compleanno anno"
+        state: >
+          {% if now().day == 1 and now().month == 2 %}
+            2015
+          {% elif now().day == 3 and now().month == 4 %}
+            2010
+          {% elif now().day == 5 and now().month == 6 %}
+            1980
+          {% elif now().day == 7 and now().month == 8 %}
+            1978
+          {% else %}
+            0
+          {% endif %}

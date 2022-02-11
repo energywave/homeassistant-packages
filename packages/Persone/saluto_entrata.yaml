@@ -1,0 +1,206 @@
+# ------------------------------------------------------------------------------------------------
+# Package Persone - saluto_entrata - Ver. 1.0
+# Descrizione: saluto personale e musica quando si entra in casa
+# ------------------------------------------------------------------------------------------------
+# Autore: Henrik Sozzi
+# sito: https://henriksozzi.it
+# ------------------------------------------------------------------------------------------------
+# CHANGELOG
+# Ver. 1.0 - 05/05/2021
+#   - Miglioramenti per pubblicazione
+# ------------------------------------------------------------------------------------------------
+# Distribuito con licenza: CC BY-NC-SA 4.0
+# Formato leggibile da un essere umano: https://creativecommons.org/licenses/by-nc-sa/4.0/deed.it
+# Formato per gli avvocati: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+# ------------------------------------------------------------------------------------------------
+input_boolean:
+  return_home_henrik:
+    name: Ritorno a casa Henrik?
+    initial: false
+  return_home_antonella:
+    name: Ritorno a casa Antonella?
+    initial: false
+  musica_al_rientro:
+    name: Musica al rientro
+    icon: mdi:music
+
+automation:
+  # Avvio Home Assistant
+  - id: f3cf0bbd-9f0e-4b2d-a331-de77a3ca1314
+    alias: "Sistema - Azione - Reset stato persone all'avvio Home Assistant"
+    trigger:
+      - platform: homeassistant
+        event: start
+    action:
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.return_home_henrik
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.return_home_antonella
+
+  #Rientro a casa dei componenti familiari
+  - id: 57447077-ef00-4881-b18e-ab989946c6d4
+    alias: Persone - Logica - Henrik ritorna a casa
+    description: Quando Henrik ritorna a casa
+    trigger:
+      - platform: state
+        entity_id: person.henrik_sozzi
+        to: home
+    condition:
+      - condition: template
+        value_template: "{{ (as_timestamp(now()) - as_timestamp(state_attr('automation.persone_logica_henrik_ritorna_a_casa', 'last_triggered') | default(0)) | int > 1800)}}"  
+    action:
+      - service: input_boolean.turn_on
+        entity_id: input_boolean.return_home_henrik
+
+  - id: 458fec1f-5a40-4b0a-ab5d-dd40466256ba
+    alias: Persone - Logica - Antonella ritorna a casa
+    description: Quando Antonella ritorna a casa
+    trigger:
+      - platform: state
+        entity_id: person.antonella
+        to: home
+    condition:
+      - condition: template
+        value_template: "{{ (as_timestamp(now()) - as_timestamp(state_attr('automation.persone_logica_antonella_ritorna_a_casa', 'last_triggered') | default(0)) | int > 1800)}}"  
+    action:
+      - service: input_boolean.turn_on
+        entity_id: input_boolean.return_home_antonella
+
+  #Reset return_home
+  - id: c1c61d76-33c8-42d8-ab1b-ff150fd1e4c9
+    alias: Persone - Logica - Reset Henrik ritorna a casa
+    trigger:
+      - platform: state
+        entity_id: input_boolean.return_home_henrik
+        to: 'on'
+        for: '0:10:0'
+    condition: []
+    action:
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.return_home_henrik
+
+  - id: 4b2934ca-fcc0-440f-8241-ae8cb8bcb025
+    alias: Persone - Logica - Reset Antonella ritorna a casa
+    trigger:
+      - platform: state
+        entity_id: input_boolean.return_home_antonella
+        to: 'on'
+        for: '0:10:0'
+    condition: []
+    action:
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.return_home_antonella
+
+  #Apertura porta al rientro
+  - id: 258a2736-d0c2-4ef6-aab0-904f685d81fc
+    alias: Persone - Azione - Saluto entrata a casa
+    description: Apertura porta ingresso entro 10 minuti dall'arrivo a casa
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.porta_ingresso
+        to: 'on'
+    condition:
+      - condition: or
+        conditions:
+        - condition: state
+          entity_id: input_boolean.return_home_henrik
+          state: 'on'
+        - condition: state
+          entity_id: input_boolean.return_home_antonella
+          state: 'on'
+    action:
+      - variables:
+          compleanno: "{{ states('sensor.compleanno') }}"
+          anni: "{{ now().year - (states('sensor.compleanno_anno') | int(0)) }}"
+          is_compleanno: "{{ not compleanno in ['none', 'unknown', 'unavailable', ''] }}"
+      - alias: "E' il compleanno di qualcuno?"
+        choose:
+        - conditions: "{{ is_compleanno }}"
+          sequence:
+            - service: script.multinotify
+              data:
+                message: >
+                  <say-as interpret-as="interjection">ciao</say-as>. Oggi è un giorno speciale: {{compleanno}} compie {{anni}} anni: <say-as interpret-as="interjection">auguri</say-as>!
+                alexa_target: media_player.pian_terreno
+        default:
+          - service: script.multinotify
+            data:
+              message: >
+                {% if is_state('input_boolean.return_home_henrik', 'on') and is_state('input_boolean.return_home_antonella', 'off') %}
+                  {{['<say-as interpret-as="interjection">hey</say-as>. Bentornato a casa, Henrik!',
+                    '<say-as interpret-as="interjection">toh</say-as>, chi si vede! Bentornato, Henrik',
+                    '<say-as interpret-as="interjection">uh la là</say-as>, Henrik! Bentornato a casa!',
+                    '<say-as interpret-as="interjection">ta dà</say-as>, finalmente a casa Henrik! Bentornato!',
+                    '<say-as interpret-as="interjection">evviva</say-as>, è tornato il re del castello! Bentornato, Henrik!',
+                    '<say-as interpret-as="interjection">ding ding ding</say-as>, è tornato il papino bello! Tutte pronte alle coccole!',
+                    '<say-as interpret-as="interjection">cucù</say-as>, è tornato il papino! Casa dolce casa!',
+                    '<say-as interpret-as="interjection">ciao</say-as>, è bello riaverti a casa, Henrik!'] | random }}
+                {% elif is_state('input_boolean.return_home_henrik', 'off') and is_state('input_boolean.return_home_antonella', 'on') %}
+                  {{['<prosody volume="loud"><say-as interpret-as="interjection">hey</say-as>. Bentornata a casa, Antonella!</prosody>',
+                    '<say-as interpret-as="interjection">toh</say-as>, chi si vede! Bentornata, Antonella',
+                    '<say-as interpret-as="interjection">uh la là</say-as>, Antonella! Bentornata a casa!',
+                    '<say-as interpret-as="interjection">ta dà</say-as>, finalmente a casa Antonella! Bentornata!',
+                    '<say-as interpret-as="interjection">oh</say-as>, chi si rivede! Mi sei mancata, Antonella! Bentornata!',
+                    '<say-as interpret-as="interjection">oh yes</say-as>, cosa c''è di meglio che rientrare nel proprio nido? Bentornata, Antonella!',
+                    '<say-as interpret-as="interjection">ma dai</say-as>, non si può mai stare sole in questa casa! <say-as interpret-as="interjection">scherzavo</say-as>! Bentornata, Antonella!',
+                    '<say-as interpret-as="interjection">urrà</say-as>, la regina del castello è tornata! Bentornata, Antonella!',
+                    '<say-as interpret-as="interjection">ciao</say-as>, è bello riaverti a casa, Antonella!',
+                    '<say-as interpret-as="interjection">bene bene</say-as>, finalmente sei a casa, Antonella! Mi sentivo così sola...',
+                    '<say-as interpret-as="interjection">badabim badabum</say-as>, la mamma è tornata! è bello averti qui con noi!',
+                    '<say-as interpret-as="interjection">alleluia</say-as>, mi stavo davvero annoiando da sola! Finalmente sei tornata, Antonella! Bentornata!'] | random }}
+                {% elif is_state('input_boolean.return_home_henrik', 'on') and is_state('input_boolean.return_home_antonella', 'on') %}
+                  <prosody volume="loud"><say-as interpret-as="interjection">hey</say-as>. Bentornati a casa, famiglia Sozzi!</prosody>
+                {% endif %}
+              alexa_target: media_player.pian_terreno
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.return_home_henrik
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.return_home_antonella
+      - choose:
+          - conditions:
+              - condition: state 
+                entity_id: input_boolean.musica_al_rientro
+                state: 'on'
+              - condition: not
+                conditions:
+                  - alias: "Alexa sta riproducendo musica"
+                    condition: state
+                    entity_id: media_player.pian_terreno
+                    state: "playing"
+                  - alias: "TV Cucina acceso"
+                    condition: state
+                    entity_id: binary_sensor.tv_cucina_on
+                    state: "on"
+                  - alias: "TV Soggiorno acceso"
+                    condition: state
+                    entity_id: media_player.tv_soggiorno
+                    state: "on"
+            sequence:
+              - service: media_player.volume_set
+                data:
+                  entity_id: media_player.pian_terreno
+                  volume_level: 0.3
+              - choose:
+                  - conditions: "{{ is_compleanno }}"
+                    sequence:
+                      - service: media_player.play_media
+                        data:
+                          entity_id: media_player.pian_terreno
+                          media_content_id: 'playlist festa di compleanno'
+                          media_content_type: AMAZON_MUSIC
+                  - conditions:
+                      - condition: state
+                        entity_id: input_boolean.natale
+                        state: 'on'
+                    sequence:
+                      - service: media_player.play_media
+                        data:
+                          entity_id: media_player.pian_terreno
+                          media_content_id: 'shuffle playlist classici di natale'
+                          media_content_type: AMAZON_MUSIC
+                default:
+                  - service: media_player.play_media
+                    data:
+                      entity_id: media_player.pian_terreno
+                      media_content_id: 'shuffle playlist relax e serenità'
+                      media_content_type: AMAZON_MUSIC

@@ -1,0 +1,233 @@
+# -----------------------------------------------------------------------------------------------
+# Package Persone - auto_detect - Ver. 2.0
+# Descrizione: gestione presenza/assenza in modo sicuro e generazione eventi specifici
+# -----------------------------------------------------------------------------------------------
+# Autore: Henrik Sozzi
+# sito: https://henriksozzi.it
+# -----------------------------------------------------------------------------------------------
+# CHANGELOG
+# Ver. 1.0 - 05/05/2021
+#   - Miglioramenti per pubblicazione
+# Ver. 2.0 - 11/11/2021
+#   - Ottimizzazioni e snellimento gestione, fidandosi di più dei meccanismi di Home Assistant
+# Ver. 2.1 - 16/11/2021
+#   - Ci affidiamo completamente all'oggetto person. Si è rivelato affidabile
+#   - Aggiunti switch high accuracy GPS
+#   - Aggiunti sensori source, per verificare cosa è stato usato nel tempo per determinare la pos
+# -----------------------------------------------------------------------------------------------
+# Distribuito con licenza: CC BY-NC-SA 4.0
+# Formato leggibile da un essere umano: https://creativecommons.org/licenses/by-nc-sa/4.0/deed.it
+# Formato per gli avvocati: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+# -----------------------------------------------------------------------------------------------
+
+input_boolean:
+  primo_sceso_scale_today:
+    name: La prima persona è scesa dalle scale oggi?
+
+binary_sensor:
+  - platform: template
+    sensors:
+      # Stato di "a casa" di Henrik basato sul suo oggetto Person
+      # un falso "non a casa" dovuto ad un bounce della presenza dell'entità person. L'arrivo a casa è immediato tanto quanto la rilevazione di Fritz,
+      # mentre l'uscita necessita che sia Fritz che il sensore dell'app, ritardato 10 minuti, concordino nello stato di "non a casa"
+      henrik_at_home:
+        friendly_name: "Henrik a casa?"
+        unique_id: "henrik_at_home"
+        device_class: presence
+        value_template: "{{ is_state('person.henrik_sozzi', 'home')}}"
+        entity_picture_template: "/local/henrik{% if not(is_state('person.henrik_sozzi', 'home')) %}_off{% endif %}.jpg"
+
+      # Stato di "a casa" di Antonella basato sul suo oggetto Person
+      # un falso "non a casa" dovuto ad un bounce della presenza dell'entità person. L'arrivo a casa è immediato tanto quanto la rilevazione di Fritz,
+      # mentre l'uscita necessita che sia Fritz che il sensore dell'app, ritardato 10 minuti, concordino nello stato di "non a casa"
+      antonella_at_home:
+        friendly_name: "Antonella a casa?"
+        unique_id: "antonella_at_home"
+        device_class: presence
+        value_template: "{{ is_state('person.antonella', 'home') }}"
+        entity_picture_template: "/local/antonella{% if not(is_state('person.antonella', 'home')) %}_off{% endif %}.jpg"
+
+      # Stato di "a casa" di Erica basato sul suo oggetto Person
+      # un falso "non a casa" dovuto ad un bounce della presenza dell'entità person. L'arrivo a casa è immediato tanto quanto la rilevazione di Fritz,
+      # mentre l'uscita necessita che sia Fritz che il sensore dell'app, ritardato 10 minuti, concordino nello stato di "non a casa"
+      erica_at_home:
+        friendly_name: "Erica a casa?"
+        unique_id: "erica_at_home"
+        device_class: presence
+        value_template: "{{ is_state('person.erica', 'home') }}"
+        entity_picture_template: "/local/erica{% if not(is_state('person.erica', 'home')) %}_off{% endif %}.jpg"
+
+      # Stato di "a casa" di Ankie. Serve esclusivamente per poterla mettere nel gruppo anyone_at_home, fatta di binary sensors.
+      # Si basa sull'entità person che a sua volta usa solo il device_tracker Fritz
+      ankie_at_home:
+        friendly_name: "Ankie a casa?"
+        unique_id: "ankie_at_home"
+        device_class: presence
+        value_template: "{{is_state('person.ankie', 'home')}}"
+        entity_picture_template: "/local/ankie{% if not(is_state('person.ankie', 'home')) %}_off{% endif %}.jpg"
+
+template:
+  - sensor:
+      # Sensori person_NAME_source che deterinano nel tempo quale sorgente viene usata dall'oggetto person per determinare la posizione
+      - name: Person Henrik Source
+        unique_id: 8693c26f-d00d-493b-b129-f79a03d97deb
+        state: "{{ state_attr('person.henrik_sozzi', 'source')[15:] }}"
+      - name: Person Antonella Source
+        unique_id: fea33faf-cebd-4f2e-a839-96dc2db74a19
+        state: "{{ state_attr('person.antonella', 'source')[15:] }}"
+      - name: Person Erica Source
+        unique_id: 2fd8669e-6e8a-4cf2-9dde-3a2e3011fa68
+        state: "{{ state_attr('person.erica', 'source')[15:] }}"
+
+switch:
+  - platform: template
+    switches:
+      # Swtich tel_NOME_hq_gps per rilevare e modificare lo stato di alta qualità nella rilevazione della posizione dei telefoni
+      tel_henrik_hq_gps:
+        friendly_name: Tel Henrik HQ GPS
+        unique_id: e67c8229-65f9-40b1-9f6c-c8c983ccb69d
+        value_template: "{{ is_state('binary_sensor.tel_henrik_high_accuracy_mode', 'on') }}"
+        availability_template: "{{ states.binary_sensor.tel_henrik_high_accuracy_mode.state is defined }}"
+        turn_on:
+          service: notify.mobile_app_tel_henrik
+          data:
+            message: "command_high_accuracy_mode"
+            title: "turn_on"
+        turn_off:
+          service: notify.mobile_app_tel_henrik
+          data:
+            message: "command_high_accuracy_mode"
+            title: "turn_off"
+      tel_anto_hq_gps:
+        friendly_name: Tel Antonella HQ GPS
+        unique_id: 55edc1de-f870-4f69-977a-6eb8018a8f83
+        value_template: "{{ is_state('binary_sensor.smartphone_antonella_high_accuracy_mode', 'on') }}"
+        availability_template: "{{ states.binary_sensor.smartphone_antonella_high_accuracy_mode.state is defined }}"
+        turn_on:
+          service: notify.mobile_app_smartphone_antonella
+          data:
+            message: "command_high_accuracy_mode"
+            title: "turn_on"
+        turn_off:
+          service: notify.mobile_app_smartphone_antonella
+          data:
+            message: "command_high_accuracy_mode"
+            title: "turn_off"
+      tel_erica_hq_gps:
+        friendly_name: Tel Erica HQ GPS
+        unique_id: a3aff8b6-95f7-46fa-9d9d-a73cf24d4b06
+        value_template: "{{ is_state('binary_sensor.tel_erica_high_accuracy_mode', 'on') }}"
+        availability_template: "{{ states.binary_sensor.tel_erica_high_accuracy_mode.state is defined }}"
+        turn_on:
+          service: notify.mobile_app_tel_erica
+          data:
+            message: "command_high_accuracy_mode"
+            title: "turn_on"
+        turn_off:
+          service: notify.mobile_app_tel_erica
+          data:
+            message: "command_high_accuracy_mode"
+            title: "turn_off"
+
+group:
+  # Gruppo per determinare se qualcuno è a casa (contiene solo i telefoni che certamente non sono lasciati a casa)
+  anyone_at_home:
+    name: Qualcuno è a casa?
+    entities:
+      - binary_sensor.henrik_at_home
+      - binary_sensor.antonella_at_home
+      - binary_sensor.ankie_at_home
+
+automation:
+  # Chiama l'evento uscita ultimo da casa
+  - id: 86680100-fb55-4867-9f24-e8133ccc74e4
+    alias: Persone - Evento - Generazione - Uscita ultimo da casa
+    description: Chiama l'evento uscita ultimo da casa
+    trigger:
+      - platform: state
+        entity_id: group.anyone_at_home
+        to: 'off'
+    action:
+      - event: uscita_ultimo_da_casa
+
+  # Chiama l'evento arrivo del primo a casa
+  - id: cd3842d0-39d6-45a9-8f0c-6d18852e32fa
+    alias: Persone - Evento - Rientro del primo a casa
+    description: Chiama l'evento rientro del primo a casa
+    trigger:
+      - platform: state
+        entity_id: group.anyone_at_home
+        to: 'on'
+    action:
+      - event: arrivo_primo_a_casa
+  
+  # Primo che scende le scale della giornata
+  - id: 47182d5e-8f95-43f2-9503-fca9dd5fcd3c
+    alias: Persone - Evento - Primo che scende le scale della giornata
+    description: Chiama l'evento quando il primo scende le scale della giornata (presumibilmente la mattina)
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.motion_soggiorno
+        to: 'on'
+      - platform: state
+        entity_id: binary_sensor.motion_cucina
+        to: 'on'
+    condition:
+      - condition: state
+        entity_id: input_boolean.primo_sceso_scale_today
+        state: 'off'
+    action:
+      - alias: "Imposto flag primo_sceso_scale_today"
+        service: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.primo_sceso_scale_today
+      - event: primo_sceso_scale
+
+  # Alle 4 di mattina resetta lo stato di "primo sceso dalle scale oggi", così alla mattina scatta di nuovo scendendo le scale
+  - id: d617f7ff-28eb-4255-9926-b8ead30700b7
+    alias: 'Persone - Logica - Reset flag primo sceso dalle scale oggi'
+    trigger:
+      - platform: time
+        at: '06:20:00'
+    action:
+      - service: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.primo_sceso_scale_today
+  
+  # Quando rilevo movimento dalla telecamera frontale forzo una rilevazione della posizione GPS delle app di chi non risulta a casa
+  # (perchè potrebbe essere lui/lei che sta entrando. Così facendo l'app rileverà la posizione prima di arrivare alla porta di casa)
+  - id: 18b09f9d-7d52-4d09-9d8a-42d789ffcc80
+    alias: "Persone - Logica - Forzo rilevazione GPS quando movimento da cam front"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.front_cam_motion
+        from: "off"
+        to: "on"
+    action:
+      - alias: "Se Henrik non è a casa forza un rilevamento GPS"
+        choose:
+        - conditions:
+            - condition: not
+              conditions:
+                - alias: "Henrik è a casa?"
+                  condition: state
+                  entity_id: person.henrik_sozzi
+                  state: "home"
+          sequence:
+            - service: notify.mobile_app_tel_henrik
+              data:
+                message: "request_location_update"
+      - alias: "Se Antonella non è a casa forza un rilevamento GPS"
+        choose:
+        - conditions:
+            - condition: not
+              conditions:
+                - alias: "Antonella è a casa?"
+                  condition: state
+                  entity_id: person.antonella
+                  state: "home"
+          sequence:
+            - service: notify.mobile_app_smartphone_antonella
+              data:
+                message: "request_location_update"
+

@@ -1,0 +1,60 @@
+# ------------------------------------------------------------------------------------------------
+# Package Persone - wifi - Ver. 1.0
+# Descrizione: velocizza il cambio zona dei device_tracker GPS in base alla rete wifi (s)collegata
+# ------------------------------------------------------------------------------------------------
+# Autore: Henrik Sozzi
+# sito: https://henriksozzi.it
+# ------------------------------------------------------------------------------------------------
+# CHANGELOG
+# Ver. 1.0 - 05/05/2021
+#   - Miglioramenti per pubblicazione
+# Ver. 1.1 - 11/11/2021
+#   - Aggiunte due automazioni per rilevare l'arrivo a casa tramite wifi
+#   - Pulizia Yaml in base a https://developers.home-assistant.io/docs/documenting/yaml-style-guide
+# Ver. 1.2 - 16/11/2021
+#   - Nuova automazione unica basata su array di dizionari con SSID - zone (credit: Max Albani)
+# ------------------------------------------------------------------------------------------------
+# Distribuito con licenza: CC BY-NC-SA 4.0
+# Formato leggibile da un essere umano: https://creativecommons.org/licenses/by-nc-sa/4.0/deed.it
+# Formato per gli avvocati: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+# ------------------------------------------------------------------------------------------------
+automation:
+  # Arrivo e partenza dal negozio di Antonella
+  - id: 48d481d3-9051-443b-a8ea-3e698f99f560
+    alias: Tracker - Wifi - Telefoni
+    trace:
+      stored_traces: 20
+    trigger:
+      - entity_id: sensor.tel_henrik_wifi
+        platform: state
+      - entity_id: sensor.tel_anto_wifi
+        platform: state
+      - entity_id: sensor.tel_erica_wifi_connection
+        platform: state
+    # condition:
+      # - "{{ trigger.from_state.state != 'LaTana' }}"
+      # - "{{ (as_timestamp(now(), 0) - as_timestamp(trigger.from_state.last_changed, 0)) > 180 }}"
+    action:
+      - variables:
+          tracker: "{{ trigger.from_state.object_id }}"
+          zona: >
+            {% set zone =
+              [
+                {'ssid': '<not connected>', 'zona': 'not_home'},
+                {'ssid': 'ssid-casa',          'zona': 'home'},
+                {'ssid': 'ssid-guests',   'zona': 'home'},
+                {'ssid': 'altro-ssid',    'zona': 'negozio'},
+                {'ssid': 'ssid-ufficio',   'zona': 'ufficio'},
+                {'ssid': 'ssid-ufficio-guests', 'zona': 'ufficio'},
+                {'ssid': 'ssid-casa-amici', 'zona': 'mariorossi'},
+                {'ssid': 'ssid-casa-amici-5g',   'zona': 'mariorossi'},
+                {'ssid': 'ssid-suocera',       'zona': 'suocera'},
+                {'ssid': 'ssid-nonni',       'zona': 'nonni'}
+              ]
+            %}
+            {{zone | selectattr('ssid', 'eq', trigger.to_state.state) | map(attribute='zona') | first | default('not_home')}}
+      - alias: "Imposta la zona"
+        service: device_tracker.see
+        data:
+          dev_id: "{{tracker}}"
+          location_name: "{{zona}}"

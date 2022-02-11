@@ -1,0 +1,207 @@
+# ------------------------------------------------------------------------------------------------
+# Package Persone - work - Ver. 1.0
+# Descrizione: notifiche quando entriamo o usciamo dal lavoro
+# ------------------------------------------------------------------------------------------------
+# Autore: Henrik Sozzi
+# sito: https://henriksozzi.it
+# ------------------------------------------------------------------------------------------------
+# CHANGELOG
+# Ver. 1.0 - 05/05/2021
+#   - Miglioramenti per pubblicazione
+# ------------------------------------------------------------------------------------------------
+# Distribuito con licenza: CC BY-NC-SA 4.0
+# Formato leggibile da un essere umano: https://creativecommons.org/licenses/by-nc-sa/4.0/deed.it
+# Formato per gli avvocati: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+# ------------------------------------------------------------------------------------------------
+input_boolean:
+  notifiche_lavoro:
+    name: Notifiche and/rit lavoro
+    icon: mdi:briefcase-outline
+  henrik_ritorno_a_pranzo:
+    name: Henrik ritorna a casa a pranzo
+    icon: mdi:pasta
+
+automation:
+  # Arrivo al lavoro / rientro dal lavoro
+  - id: 49f72ed4-1b6c-4729-baf9-edaa86fd072f
+    alias: "Persone - Notifica - Henrik ritorna dal lavoro"
+    description: "Quando Henrik esce dalla zona lavoro dopo le ore 19:00 annuncia il ritorno a casa con Alexa"
+    trigger:
+      - entity_id: person.henrik_sozzi
+        from: Poliware
+        platform: state
+    condition:
+      - condition: template
+        value_template: "{{ (as_timestamp(now()) - as_timestamp(state_attr('automation.persone_notifica_henrik_ritorna_dal_lavoro', 'last_triggered') | default(0)) | int > 1800)}}"  
+      - condition: state
+        entity_id: input_boolean.notifiche_lavoro
+        state: 'on'
+      - condition: or
+        conditions:
+          - condition: time
+            after: '19:00:00'
+            before: '22:00:00'
+            weekday:
+              - mon
+              - tue
+              - wed
+              - thu
+              - fri
+          - condition: and
+            conditions:
+              - condition: state
+                entity_id: input_boolean.henrik_ritorno_a_pranzo
+                state: 'on'
+              - condition: time
+                after: '11:40:00'
+                before: '14:00:00'
+                weekday:
+                  - mon
+                  - tue
+                  - wed
+                  - thu
+                  - fri
+    action:
+      - service: script.multinotify
+        data:
+          title: "Henrik sta tornando"
+          message: "Henrik sta tornando dall'ufficio!"
+          alexa_message: '<say-as interpret-as="interjection">yippii</say-as>. Papà sta tornando dall ufficio!'
+          alexa_target: media_player.ovunque
+          notify_app: notify.all_devices
+          channel: people-fromwork
+          group: people
+          tag: "{{trigger.to_state.name}} home"
+
+  - id: 489203b7-4720-4e73-8801-e130c889dfe9
+    alias: "Persone - Notifica - Antonella esce dal negozio"
+    description: "Avvisa tramite Alexa quando Anto esce dal negozio"
+    trigger:
+      - entity_id: person.antonella
+        from: Noemi
+        platform: state
+    condition:
+      - condition: template
+        value_template: "{{ (as_timestamp(now()) - as_timestamp(state_attr('automation.persone_notifica_antonella_arriva_in_negozio', 'last_triggered') | default(0)) | int > 1800)}}"  
+      - condition: template
+        value_template: "{{ (as_timestamp(now()) - as_timestamp(state_attr('automation.persone_notifica_antonella_esce_dal_negozio', 'last_triggered') | default(0)) | int > 1800)}}"  
+      - condition: state
+        entity_id: input_boolean.notifiche_lavoro
+        state: 'on'
+    action:
+      - service: script.multinotify
+        data:
+          title: Antonella sta tornando
+          message: Antonella è uscita dal negozio!
+          alexa_message: '<say-as interpret-as="interjection">yippii</say-as>. La mamma è uscita dal negozio!'
+          alexa_target: media_player.ovunque
+          notify_app: notify.all_devices
+          channel: people-fromwork
+          group: people
+          tag: "{{trigger.to_state.name}} home"
+
+  - id: bd9bb359-7a76-447f-8ef9-d625b1a59b48
+    alias: "Persone - Notifica - Antonella arriva in negozio"
+    description: "Avvisa tramite Alexa quando Anto arriva in negozio"
+    trigger:
+      - entity_id: person.antonella
+        platform: state
+        to: Noemi
+    condition:
+      - condition: template
+        value_template: "{{ (as_timestamp(now()) - as_timestamp(state_attr('automation.persone_notifica_antonella_arriva_in_negozio', 'last_triggered') | default(0)) | int > 1800)}}"  
+      - condition: template
+        value_template: "{{ (as_timestamp(now()) - as_timestamp(state_attr('automation.persone_notifica_antonella_esce_dal_negozio', 'last_triggered') | default(0)) | int > 1800)}}"  
+      - condition: state
+        entity_id: input_boolean.notifiche_lavoro
+        state: 'on'
+    action:
+      - service: script.multinotify
+        data:
+          title: Antonella è in negozio
+          message: Antonella è arrivata in negozio!
+          alexa_message: '<say-as interpret-as="interjection">din don</say-as>. La mamma è arrivata in negozio!'
+          alexa_target: media_player.ovunque
+          notify_app: notify.all_devices
+          channel: people-towork
+          group: people
+          tag: "{{trigger.to_state.name}} home"
+
+  # Qualcuno arriva a casa o parte da casa
+  - id: 0bb4febe-f9b1-445c-9b27-ac9793c4a617
+    alias: "Persone - Notifica - Qualcuno arriva o parte da casa"
+    trigger:
+      # To: home
+      - platform: state
+        entity_id: person.henrik_sozzi
+        to: "home"
+      - platform: state
+        entity_id: person.antonella
+        to: "home"
+      - platform: state
+        entity_id: person.erica
+        to: "home"
+      - platform: state
+        entity_id: person.angelo
+        to: "home"
+      - platform: state
+        entity_id: person.ankie
+        to: "home"
+      - platform: state
+        entity_id: person.anna
+        to: "home"
+      - platform: state
+        entity_id: person.giuseppe
+        to: "home"
+      - platform: state
+        entity_id: person.paola
+        to: "home"
+      # From: home
+      - platform: state
+        entity_id: person.henrik_sozzi
+        from: "home"
+      - platform: state
+        entity_id: person.antonella
+        from: "home"
+      - platform: state
+        entity_id: person.erica
+        from: "home"
+      - platform: state
+        entity_id: person.angelo
+        from: "home"
+      - platform: state
+        entity_id: person.ankie
+        from: "home"
+      - platform: state
+        entity_id: person.anna
+        from: "home"
+      - platform: state
+        entity_id: person.giuseppe
+        from: "home"
+      - platform: state
+        entity_id: person.paola
+        from: "home"
+    action:
+      - service: script.multinotify
+        data:
+          notify_app: notify.mobile_app_tel_henrik
+          title: >
+            {% if trigger.to_state.state == 'home' %}
+              {{trigger.to_state.name}} è a casa
+            {% else %}
+              {{trigger.to_state.name}} non è più a casa
+            {% endif %}
+          message: >
+            {% if trigger.to_state.state == 'home' %}
+              {{trigger.to_state.name}} è ora entrato/a a casa
+            {% else %}
+              {{trigger.to_state.name}} è ora uscito/a da casa
+            {% endif %}
+          channel: >
+            {% if trigger.to_state.state == 'home' %}
+              people-tohome
+            {% else %}
+              people-fromhome
+            {% endif %}
+          group: people
+          tag: "{{trigger.to_state.name}} home"     
