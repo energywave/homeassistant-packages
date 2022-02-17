@@ -19,37 +19,34 @@
 # Formato per gli avvocati: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
 # ------------------------------------------------------------------------------------------------
 automation:
-  # Arrivo e partenza dal negozio di Antonella
+  # Rilevazione della zona in base all'SSID a cui è collegato lo smartphone
   - id: 48d481d3-9051-443b-a8ea-3e698f99f560
     alias: Tracker - Wifi - Telefoni
     trace:
       stored_traces: 20
     trigger:
-      - entity_id: sensor.tel_henrik_wifi
-        platform: state
-      - entity_id: sensor.tel_anto_wifi
-        platform: state
-      - entity_id: sensor.tel_erica_wifi_connection
-        platform: state
-    # condition:
-      # - "{{ trigger.from_state.state != 'LaTana' }}"
-      # - "{{ (as_timestamp(now(), 0) - as_timestamp(trigger.from_state.last_changed, 0)) > 180 }}"
+      - platform: state
+        entity_id: 
+          - sensor.tel_henrik_wifi
+          - sensor.tel_anto_wifi
+          - sensor.tel_erica_wifi_connection
+        to:
     action:
       - variables:
           tracker: "{{ trigger.from_state.object_id }}"
           zona: >
             {% set zone =
               [
-                {'ssid': '<not connected>', 'zona': 'not_home'},
-                {'ssid': 'ssid-casa',          'zona': 'home'},
-                {'ssid': 'ssid-guests',   'zona': 'home'},
-                {'ssid': 'altro-ssid',    'zona': 'negozio'},
-                {'ssid': 'ssid-ufficio',   'zona': 'ufficio'},
+                {'ssid': '<not connected>',     'zona': 'not_home'},
+                {'ssid': 'ssid-casa',           'zona': 'home'},
+                {'ssid': 'ssid-guests',         'zona': 'home'},
+                {'ssid': 'altro-ssid',          'zona': 'negozio'},
+                {'ssid': 'ssid-ufficio',        'zona': 'ufficio'},
                 {'ssid': 'ssid-ufficio-guests', 'zona': 'ufficio'},
-                {'ssid': 'ssid-casa-amici', 'zona': 'mariorossi'},
-                {'ssid': 'ssid-casa-amici-5g',   'zona': 'mariorossi'},
-                {'ssid': 'ssid-suocera',       'zona': 'suocera'},
-                {'ssid': 'ssid-nonni',       'zona': 'nonni'}
+                {'ssid': 'ssid-casa-amici',     'zona': 'mariorossi'},
+                {'ssid': 'ssid-casa-amici-5g',  'zona': 'mariorossi'},
+                {'ssid': 'ssid-suocera',        'zona': 'suocera'},
+                {'ssid': 'ssid-nonni',          'zona': 'nonni'}
               ]
             %}
             {{zone | selectattr('ssid', 'eq', trigger.to_state.state) | map(attribute='zona') | first | default('not_home')}}
