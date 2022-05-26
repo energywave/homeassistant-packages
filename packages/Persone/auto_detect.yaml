@@ -68,7 +68,7 @@ binary_sensor:
 
 template:
   - sensor:
-      # Sensori person_NAME_source che deterinano nel tempo quale sorgente viene usata dall'oggetto person per determinare la posizione
+      # Sensori person_NAME_source che determinano nel tempo quale sorgente viene usata dall'oggetto person per determinare la posizione
       - name: Person Henrik Source
         unique_id: 8693c26f-d00d-493b-b129-f79a03d97deb
         state: "{{ state_attr('person.henrik_sozzi', 'source')[15:] }}"
@@ -183,7 +183,7 @@ automation:
           entity_id: input_boolean.primo_sceso_scale_today
       - event: primo_sceso_scale
 
-  # Alle 4 di mattina resetta lo stato di "primo sceso dalle scale oggi", così alla mattina scatta di nuovo scendendo le scale
+  # Alle 6:20 di mattina resetta lo stato di "primo sceso dalle scale oggi", così alla mattina scatta di nuovo scendendo le scale
   - id: d617f7ff-28eb-4255-9926-b8ead30700b7
     alias: 'Persone - Logica - Reset flag primo sceso dalle scale oggi'
     trigger:

@@ -28,7 +28,7 @@ automation:
     description: "Quando Henrik esce dalla zona lavoro dopo le ore 19:00 annuncia il ritorno a casa con Alexa"
     trigger:
       - entity_id: person.henrik_sozzi
-        from: Poliware
+        from: Ufficio
         platform: state
     condition:
       - condition: template
@@ -78,7 +78,7 @@ automation:
     description: "Avvisa tramite Alexa quando Anto esce dal negozio"
     trigger:
       - entity_id: person.antonella
-        from: Noemi
+        from: Negozio
         platform: state
     condition:
       - condition: template
@@ -106,7 +106,7 @@ automation:
     trigger:
       - entity_id: person.antonella
         platform: state
-        to: Noemi
+        to: Negozio
     condition:
       - condition: template
         value_template: "{{ (as_timestamp(now()) - as_timestamp(state_attr('automation.persone_notifica_antonella_arriva_in_negozio', 'last_triggered') | default(0)) | int > 1800)}}"  

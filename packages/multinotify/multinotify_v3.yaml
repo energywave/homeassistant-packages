@@ -1,10 +1,16 @@
 # -------------------------------------------------------------------------------------------------
-# Package Multinotify - Ver. 3.0
-# Descrizione: script multinotify per gestire l'invio di messaggi alle app e ai dispositivi 
-#              Alexa con un unica azione. I dispositivi Alexa metteranno in paura l'eventuale
+# Package Multinotify - Ver. 3.1
+# Descrizione: script multinotify per gestire l'invio di notifiche alle app di Home Assistant ed
+#              altre app e dispositivi multimediali con una unica azione.
+#              I dispositivi Alexa metteranno in paura l'eventuale
 #              musica, imposteranno il volume specificato (o 0.6 se non specificato), 
 #              riprodurranno il messaggio e infine riprenderanno la riproduzione, se era in corso
 #              e infine ripristineranno il volume precedente.
+#              Destinazioni supportate:
+#               - App Companion (Android e iPhone)
+#               - Alexa (singole, gruppi, o elenco)
+#               - Dispositivi multimediali tra cui Google Home (singoli, gruppi o elenco)
+#               - Pushover
 # Articolo: https://henriksozzi.it/2022/01/package-multinotify-notifiche-su-alexa-e-app/
 # -------------------------------------------------------------------------------------------------
 # Autore: Henrik Sozzi
@@ -27,6 +33,9 @@
 #   - Modificata modalità in queued max 10 per permettere l'accodamento di più messaggi
 # Ver. 3.0 - 02/02/2022
 #   - Integrazione Google Home (non riprende la musica dopo tts)
+# Ver. 3.1 - 27/05/2022
+#   - Supportate notifiche ad iphone (sperimentale). Gli iphone vanno specificati nell'apposita variabile anchor
+#   - Aggiunto supporto a Pushover
 # -------------------------------------------------------------------------------------------------
 # Distribuito con licenza: CC BY-NC-SA 4.0
 # Formato leggibile da un essere umano: https://creativecommons.org/licenses/by-nc-sa/4.0/deed.it
@@ -64,12 +73,20 @@
 #  - L'entità speciale ovunque o everywhere (necessario che esista il gruppo group.all_alexa contenente tutti i device Alexa)
 #      alexa_target: media_player.ovunque
 
+####################################
+# PARAMETRI GENERALI DA IMPOSTARE: #
+####################################
+# tts_default_service: sostituire a "tts.cloud_say" la stringa "tts.google_translate_say" se si vuole usare il servizio di Google Translate
+# default_valume: sostituire a 0.6 il valore del volume di default che si vuole applicare all'avvio di HA e come fallback
+# iphones: indicare nella stringa i nomi esatti dei servizi notify corrispondenti a dispositivi iphone, separati da virgola.
+#          è necessario inserire anche i gruppi di iphone (se sono gruppi misti indicarli come iphone).
+#          Esempio: "notify.iphone_di_mario, notify.tutti_gli_iphones, notify.tutti_gli_iphone_e_un_android"
 homeassistant:
   customize:
     package.node_anchors:
       tts_default_service: &tts_default_service "tts.cloud_say"
       default_volume: &default_volume 0.6
-
+      iphones: &iphones ""
 
 
 
@@ -256,48 +273,57 @@ script:
         name: 'Servizio notifica app'
         description: "Il nome del servizio di notifica app o non compilare per non inviare notifiche all'app"
         selector:
-          entity:
-            domain: notify
-        example: 'notify.all_devices'
+          text:
+        example: "notify.all_devices"
       group:
         name: 'Gruppo app'
         description: 'Stringa identificativa del gruppo di notifiche. Sul telefono le notifiche saranno raggruppate in base a questo valore. Se non specificato sarà usato channel o "info"'
         selector:
           text:
-        example: 'alarm'
+        example: "alarm"
       channel:
-        name: 'Canale app'
+        name: "Canale app"
         description: 'Stringa identificativa del canale, ovvero il gruppo di notifiche con impostazioni a se stanti sul telefono. Se non specificato sarà usato group o "info"'
         selector:
           text:
-        example: 'Generic'
+        example: "Generic"
       icon:
-        name: 'Icona app'
+        name: "Icona app"
         description: 'nome del file (senza percorso, senza notify_ e senza estensione) che deve essere usato da mostrare nella notifica. nell''esempio "warning" diventerà "/local/notify_warning.png". Se non specificato userà channel, group o "info"'
         selector:
           text:
-        example: 'warning'
+        example: "warning"
       tag:
-        name: 'Tag app'
+        name: "Tag app"
         description: "Campo tag della notifica ad app. Se impostato sul telefono l'eventuale notifica sarà sostituita alla seguente con tag uguale"
         selector:
           text:
-        example: 'fulmini'
+        example: "fulmini"
       critical:
-        name: 'Critical app'
+        name: "Critical app"
         description: 'impostare a "true" per inviare una notifica immediata. Se "false" o non specificata la notifica sarà riprodotta quando verrà sbloccato il telefono (default: true)'
         selector:
           boolean:
-        example: 'true'
+        example: "true"
+
+      # Pushover
+      notify_pushover:
+        name: "Servizio notifica pushover"
+        description: "Il nome del servizio di notifica pushover o non passare alcun valore per non inviare notifica pushover"
+        selector:
+          text:
+        example: "notify.pushover"
     variables:
       default_volume: *default_volume
+      iphones: *iphones
     sequence:
       # Sezione messaggio all'app
       - alias: "Notifica App"
         choose:
-        - alias: "notify_app è stato passato dal chiamante?"
-          conditions: "{{ notify_app is defined }}"
+        - alias: "notify_app è stato passato dal chiamante e la notifica non va ad iphone"
+          conditions: "{{ notify_app is defined and notify_app not in iphones }}"
           sequence:
+            # Notifica dall'app companion ad Android
             - service: '{{notify_app}}'
               data:
                 title: "{{title | default('Notifica da casa')}}"
@@ -309,6 +335,26 @@ script:
                   icon_url: "/local/notify_{{icon | default(channel) | default(group) | default('info')}}.png"
                   ttl: "{{0 if (critical | default(true)) else 86400}}"
                   priority: "{{'high' if (critical | default(true)) else 'normal'}}"
+        - alias: "notify_app è stato passato dal chiamante e la notifica va ad iphone"
+          conditions: "{{ notify_app is defined and notify_app in iphones }}"
+          sequence:
+            # Notifica dall'app companion ad iphone
+            - service: '{{notify_app}}'
+              data:
+                title: "{{title | default('Notifica da casa')}}"
+                message: "{{message}}"
+
+      # Sezione notifica Pushover
+      - alias: "Notifica Pushover"
+        choose:
+        - alias: "notify_pushover è stato passato dal chiamante"
+          conditions: "{{ notify_pushover is defined }}"
+          sequence:
+            # Notifica da tutti i dispositivi connessi a Pushover
+            - service: '{{notify_pushover}}'
+              data:
+                title: "{{title | default('Notifica da casa')}}"
+                message: "{{message}}"
 
       # Sezione messaggio Alexa
       - alias: "Notifica Alexa"
@@ -461,7 +507,7 @@ automation:
     variables:
       default_volume: *default_volume
     action:
-      - alias: "Imposta il volume al 60%"
+      - alias: "Imposta il volume al valore di default"
         service: media_player.volume_set
         target:
           entity_id: group.all_alexa
