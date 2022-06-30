@@ -1,0 +1,13 @@
+type: vertical-stack
+cards:
+  - type: thermostat
+    entity: climate.condizionatore_STANZA
+  - type: entities
+    show_header_toggle: false
+    entities:
+      - entity: input_boolean.condizionatore_STANZA_auto
+        name: Modalità automatica
+      - entity: sensor.STANZA_ac_temperature_status
+        name: Stato temperatura
+      - entity: sensor.condizionatore_STANZA_power
+        name: Consumo

@@ -1,0 +1,151 @@
+# -----------------------------------------------------------------------------------------------
+# Package AUTO-A/C - Ver. 1.0
+# Descrizione: gestione automatica climatizzatore con sonda temperatura
+# -----------------------------------------------------------------------------------------------
+# Autore: Henrik Sozzi
+# sito: https://henriksozzi.it
+# -----------------------------------------------------------------------------------------------
+# CHANGELOG
+# Ver. 1.0 - 01/07/2022
+#   - Estratto da package in uso per pubblicazione su github
+# -----------------------------------------------------------------------------------------------
+# PREREQUISITI
+#   - Una entità climate per il condizionatore (io uso SmartIR con un Broadlink RM3)
+#   - Un sensore di temperatura nella stanza (io uso la termovalvola del calorifero di Tado)
+#   - Nascondete il telecomando fisico del climatizzatore altrimenti lo stato in HA potrà non 
+#     essere in fase con lo stato reale...
+# -----------------------------------------------------------------------------------------------
+# ISTRUZIONI
+#   - Sostituire le parti scritte in MAIUSCOLO con quel che si desidera
+#   - Replicare gli elementi di ogni sezione per ogni climatizzatore da gestire
+#     ...eh si, lo so. Questo package l'ho fatto tanto tempo fa, oggi mi sarei sforzato a gestire
+#     tutti i clima da una unica automazione ma questo, al momento, è fatto così e gestendo due
+#     soli clima non ho voglia di spremere le meningi per convertirlo. Considerando che da due
+#     anni funziona alla perfezione. Prima regola dell'informatica: se funziona non si tocca! :D
+#   - Per accendere / spegnere il clima uso un'isteresi di + o - 0,3° sulla temperatura impostata.
+#     Ad esempio se impostata su 24° il clima non si spegnerà fino a che scende sotto ai 23,7° e
+#     non si riaccenderà finchè la temperatura non salirà oltre i 24,3°.
+#     Se volete un'isteresi più stretta basta modificare il - 0.3 e il 0.3 nel sensore 
+#     STANZA_ac_temperature_status
+#   - Consiglio di utilizzare soltanto l'entità input_boolean "Condizionatore STANZA auto" per 
+#     accendere / spegnere il climatizzatore. La temperatura e modalità di funzionamento può
+#     essere regolata direttamente da SmartIR e verrà mantenuta.
+#   - Al momento viene gestita solo la modalità di raffrescamento "cool". Tutte le altre modalità
+#     è quindi meglio utilizzarle direttamente da SmartIR senza attivare l'input_boolean.
+# -----------------------------------------------------------------------------------------------
+# Distribuito con licenza: CC BY-NC-SA 4.0
+# Formato leggibile da un essere umano: https://creativecommons.org/licenses/by-nc-sa/4.0/deed.it
+# Formato per gli avvocati: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+# -----------------------------------------------------------------------------------------------
+
+input_boolean:
+  condizionatore_STANZA_auto:
+    name: Condizionatore STANZA auto
+    icon: mdi:auto-fix
+  # Aggiungere un input_boolean per ogni climatizzatore da gestire
+
+sensor:
+  - platform: template
+    sensors:
+      STANZA_ac_temperature_status:
+        friendly_name: "Stato temperatura condizionatore STANZA"
+        value_template: >-
+          {% if (state_attr('climate.condizionatore_STANZA', 'current_temperature') | default(0)) < ((state_attr('climate.condizionatore_STANZA', 'temperature') | default(0)) - 0.3) %}
+            low
+          {% elif (state_attr('climate.condizionatore_STANZA', 'current_temperature') | default(0)) > ((state_attr('climate.condizionatore_STANZA', 'temperature') | default(0)) + 0.3) %}
+            high
+          {% else %}
+            normal
+          {% endif %}
+  # Aggiungere un sensore template per ogni clima da gestire
+
+binary_sensor:
+  # Sensore creato per essere usato come power_sensor di SmartIR. Due anni fa, quando l'ho provato, non funzionava bene
+  # ma siccome ho nascosto i telecomandi ed uso solo HA (anche tramite Alexa) per accendere i clima non l'ho più usato.
+  # Se volete provare ad usarlo vi consiglio di preovare prima senza per esser sicuri che funzioni.
+  # l'entità sensor.condizionatore_STANZA_power è l'entità di uno Shely 1PM contenente l'assorbimento istantaneo in W.
+  - platform: template
+    sensors:
+      ac_STANZA_run:
+        friendly_name: 'Condizionatore STANZA in funzione'
+        device_class: power
+        value_template: >-
+          {{ (states('sensor.condizionatore_STANZA_power') | float(0)) > 20 }}
+  # Aggiungere un binary sensor per ogni climatizzatore da gestire
+  
+automation:
+# Automazione condizionatore STANZA
+  - id: c6c7f996-c7bd-4a6d-956e-f1458181dbca
+    alias: Clima - Azione - Condizionatore STANZA auto troppo freddo
+    description: "Quando in modalità auto e la temperatura è troppo bassa in STANZA spegne il condizionatore"
+    trigger:
+      - platform: state
+        entity_id: sensor.STANZA_ac_temperature_status
+        to: 'low'
+      - platform: state
+        entity_id: input_boolean.condizionatore_STANZA_auto
+        to: 'on'
+      - platform: homeassistant
+        event: start
+    condition:
+      - condition: state
+        entity_id: sensor.STANZA_ac_temperature_status
+        state: 'low'
+      - condition: state
+        entity_id: input_boolean.condizionatore_STANZA_auto
+        state: 'on'
+      - condition: state
+        entity_id: climate.condizionatore_STANZA
+        state: 'cool'
+    action:
+      alias: "Spegne condizionatore STANZA"
+      service: climate.set_hvac_mode
+      data:
+        entity_id: climate.condizionatore_STANZA
+        hvac_mode: 'off'
+  
+  - id: 3dad28cb-ed81-4d9f-abec-f46f96762406
+    alias: Clima - Azione - Condizionatore STANZA auto troppo caldo
+    description: "Quando in modalità auto e la temperatura è troppo alta in STANZA accende il condizionatore"
+    trigger:
+      - platform: state
+        entity_id: sensor.STANZA_ac_temperature_status
+        to: 'high'
+      - platform: state
+        entity_id: input_boolean.condizionatore_STANZA_auto
+        to: 'on'
+      - platform: homeassistant
+        event: start
+    condition:
+      - condition: state
+        entity_id: sensor.STANZA_ac_temperature_status
+        state: 'high'
+      - condition: state
+        entity_id: input_boolean.condizionatore_STANZA_auto
+        state: 'on'
+      - condition: state
+        entity_id: climate.condizionatore_STANZA
+        state: 'off'
+      - condition: template
+        value_template: "{{is_state_attr('climate.condizionatore_STANZA', 'last_on_operation', 'cool')}}"
+    action:
+      alias: "Accende condizionatore STANZA"
+      service: climate.set_hvac_mode
+      data:
+        entity_id: climate.condizionatore_STANZA
+        hvac_mode: 'cool'
+
+  - id: 4911d997-eb9e-4111-8968-6e8117e8417a
+    alias: Clima - Azione - Condizionatore STANZA auto off
+    description: Spegne la climatizzazione in STANZA quando si disattiva la modalità automatica
+    trigger:
+      - platform: state
+        entity_id: input_boolean.condizionatore_STANZA_auto
+        to: 'off'
+    action:
+      alias: "Spegne il condizionatore STANZA"
+      service: climate.set_hvac_mode
+      data:
+        entity_id: climate.condizionatore_STANZA
+        hvac_mode: 'off'
+  # Replicare queste tre automazioni per ogni climatizzatore da gestire  
