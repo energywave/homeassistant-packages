@@ -413,7 +413,7 @@ script:
                     type: announce
                   target: "{{alexa_target}}"
               - delay:
-                  seconds: "{{(5 + (message.count(', ') + message.count('. ') + message.count('! ') + message.count('? ') + message.count(': ') + message.count('; ')) | float * 0.35 + (message | length) * 0.06) | round(default=0)}}"
+                  seconds: "{{(5 + (message.count(', ') + message.count('. ') + message.count('! ') + message.count('? ') + message.count(': ') + message.count('; ')) | float(0) * 0.35 + (message | length) * 0.06) | round(default=0)}}"
 
               # script.multinotify_alexa_post: ripristino volume precedente e riproduzione musica, se era in corso, su tutti i dispositivi Alexa coinvolti
               - repeat:
@@ -484,7 +484,7 @@ script:
                   # options: >
                   #   {% if service == "tts.cloud_say" %}gender: female{%endif%}
               - delay:
-                  seconds: "{{(1 + (message.count(', ') + message.count('. ') + message.count('! ') + message.count('? ') + message.count(': ') + message.count('; ')) | float * 0.35 + (message | length) * 0.06) | round(default=0)}}"
+                  seconds: "{{(1 + (message.count(', ') + message.count('. ') + message.count('! ') + message.count('? ') + message.count(': ') + message.count('; ')) | float(0) * 0.35 + (message | length) * 0.06) | round(default=0)}}"
 
               # script.multinotify_tts_post: ripristino volume precedente e riproduzione musica, se era in corso, su tutti i dispositivi coinvolti
               - repeat:
