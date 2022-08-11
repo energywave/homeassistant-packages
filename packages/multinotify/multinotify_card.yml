@@ -9,8 +9,13 @@
 # -------------------------------------------------------------------------------------------------
 
 type: custom:vertical-stack-in-card
-title: Multinotify
+title: Notifica ad Alexa
 cards:
+  - type: entities
+    entities:
+      - entity: input_text.multinotify_message
+      - entity: input_select.multinotify_dest
+      - entity: input_number.multinotify_volume
   - type: conditional
     conditions:
       - entity: input_boolean.multinotify_executing
@@ -25,19 +30,13 @@ cards:
     card:
       type: markdown
       content: '<ha-alert alert-type="info">Stato: **INATTIVO**</ha-alert>'
-  - type: entities
-    entities:
-      - entity: input_datetime.multinotify_dnd_start
-      - entity: input_datetime.multinotify_dnd_end
-  - type: markdown
-    title: Alexa
-    card_size: 5
-    content: |
-      Ultimo messaggio:
-      **{{states('input_text.multinotify_last_alexa_message')}}**
-  - type: markdown
-    title: TTS
-    card_size: 5
-    content: |
-      Ultimo messaggio:
-      **{{states('input_text.multinotify_last_tts_message')}}**
+  - show_name: true
+    show_icon: false
+    type: button
+    tap_action:
+      action: call-service
+      service: script.multinotify_button
+      data: {}
+      target: {}
+    name: RIPRODUCI
+    entity: script.multinotify
