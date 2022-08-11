@@ -1,5 +1,5 @@
 # -------------------------------------------------------------------------------------------------
-# Package Multinotify - Ver. 3.4.1 beta
+# Package Multinotify - Ver. 3.5 beta
 # Descrizione: script multinotify per gestire l'invio di notifiche alle app di Home Assistant ed
 #              altre app e dispositivi multimediali con una unica azione.
 #              I dispositivi Alexa metteranno in paura l'eventuale
@@ -68,6 +68,17 @@
 #   - Gli orari DND, se non impostati, vengono inizializzati a 23:00 - 09:00 (come prima di averli parametrici)
 #   - Card invio messaggi manuali tolta da multinotify_ui.yaml ed inserita in nuovo file multinotify_card.yml
 #   - Aggiunta card (dal design spartano ma funzionale) multinotify_card_config.yml utile in una plancia di configurazione
+# Ver. 3.5 - 12/08/2022 - Grazie a Vito Schiavone per i test su iOS!
+#   - Ora notify_app può essere passato in due modi. Come prima ovvero notify_app: notify.mio_telefono oppure specificando più servizi
+#     anche misti tra android ed iOS nel modo seguente:
+#     notify_app:
+#       - notify.mio_android
+#       - notify.suo_ios
+#     Per ogni invio verrà valutato se è un iOS o no controllando in iphones (da impostare negli anchor più in basso)
+#     Si possono ancora usare i gruppi ma SOLO se contengono dispositivi omogenei più smartphone android o più smartphone iOS
+#     ma NON entrambi i tipi nello stesso gruppo. In tal caso specificare singolarmente i servizi come nell'esempio sopra.
+#   - bugfix se non passati allegati ad iOS
+#   - icon: ora funziona anche su iOS (viene passato come allegato immagine, visto che non c'è un'icona)
 # -------------------------------------------------------------------------------------------------
 # Distribuito con licenza: CC BY-NC-SA 4.0
 # Formato leggibile da un essere umano: https://creativecommons.org/licenses/by-nc-sa/4.0/deed.it
@@ -111,8 +122,9 @@
 # tts_default_service: sostituire a "tts.cloud_say" la stringa "tts.google_translate_say" se si vuole usare il servizio di Google Translate
 # default_valume: sostituire a 0.6 il valore del volume di default che si vuole applicare all'avvio di HA e come fallback
 # iphones: indicare nella stringa i nomi esatti dei servizi notify corrispondenti a dispositivi iphone, separati da virgola.
-#          è necessario inserire anche i gruppi di iphone (se sono gruppi misti indicarli come iphone).
-#          Esempio: "notify.iphone_di_mario, notify.tutti_gli_iphones, notify.tutti_gli_iphone_e_un_android"
+#          è necessario inserire, se li hai, anche i gruppi di SOLI iphone
+#          NON usare gruppi misti Android / iOS! In tal caso specifica singolarmente i singoli servizi in notify_app come indicato nell'esempio
+#          Esempio: "notify.iphone_di_mario, notify.tutti_gli_iphones"
 # iphones_critical_volume: indicare il volume che si desidera su iphone per le notifiche critiche alle quali non si specifica il relativo
 #                          parametro chiamando multinotify
 homeassistant:
@@ -311,10 +323,12 @@ script:
       # App
       notify_app:
         name: "Servizio notifica app"
-        description: "Il nome del servizio di notifica app o non compilare per non inviare notifiche all'app"
+        description: "Il nome del servizio di notifica app oppure l'elenco dei servizi di notifica app o ancora non compilare per non inviare notifiche all'app"
         selector:
-          text:
-        example: "notify.all_devices"
+          object:
+        example: |
+          - notify.mio_android
+          - notify.suo_ios
       group:
         name: "Gruppo app"
         description: 'Stringa identificativa del gruppo di notifiche. Sul telefono le notifiche saranno raggruppate in base a questo valore. Se non specificato sarà usato channel o "info"'
@@ -404,28 +418,46 @@ script:
       attachment_video_android: >
         {% if attachment is defined and attachment.endswith((".mp4", ".mpg", ".mpeg", ".avi")) %}
           {{attachment}}
+        {% else %}
+          None
         {% endif %}
       attachment_video_ios: >
         {% if attachment is defined %}
-          {{attachment if not attachment.startswith('camera.')}}
+          {{attachment if not attachment.startswith('camera.') else None}}
+        {% else %}
+          None
         {% endif %}
       camerastream_ios: >
         {% if attachment is defined %}
-          {{attachment if attachment.startswith('camera.')}}
+          {{attachment if attachment.startswith('camera.') else None}}
+        {% else %}
+          None
         {% endif %}
       attachment_image_android: >
         {% if attachment is defined and attachment.startswith("camera.")%}
           {{"/api/camera_proxy/" ~ attachment}}
         {% elif attachment is defined and attachment.endswith((".jpg", ".jpeg", ".gif", ".png")) %}
           {{attachment}}
+        {% else %}
+          None
         {% endif %}
       attachment_image_ios: >
         {% if attachment is defined and attachment.endswith((".jpg", ".jpeg", ".gif", ".png")) %}
           {{attachment}}
+        {% else %}
+          "/local/notify_{{icon | default(channel) | default(group) | default('info')}}.png"
         {% endif %}
       attachment_audio_ios: >
         {% if attachment is defined and attachment.endswith((".aiff", ".wav", ".mp3")) %}
           {{attachment}}
+        {% else %}
+          None
+        {% endif %}
+      notify_apps: >
+        {% if notify_app is defined and notify_app is string %}
+          ['{{notify_app}}']
+        {% elif notify_app is defined %}
+          {{notify_app}}
         {% endif %}
     sequence:
       # Preparazione
@@ -434,37 +466,15 @@ script:
 
       # Sezione messaggio all'app
       - alias: "Notifica App"
-        choose:
-          # Notifica dall'app companion ad Android
-          - alias: "notify_app è stato passato dal chiamante. Notifica ad ANDROID"
-            conditions: "{{ notify_app is defined and notify_app not in iphones }}"
+        if: "{{notify_app is defined}}"
+        then:
+          repeat:
+            for_each: "{{notify_apps}}"
             sequence:
-              - service: "{{notify_app}}"
-                data:
-                  title: "{{title | default('Notifica da casa')}}"
-                  message: "{{message}}"
-                  data:
-                    video: "{{attachment_video_android}}"
-                    image: "{{attachment_image_android}}"
-                    group: "{{group | default(channel) | default('info')}}"
-                    channel: "{{channel_var}}"
-                    tag: "{{tag | default('')}}"
-                    icon_url: "/local/notify_{{icon | default(channel) | default(group) | default('info')}}.png"
-                    ttl: 0
-                    priority: high
-                    importance: "{{'high' if critical_var else 'default'}}"
-                    color: "{{'red' if critical_var else ''}}"
-                    ledColor: "{{'red' if critical_var else ''}}"
-                    persistent: "{{critical_var}}"
-                    subject: "{{subtitle | default(None)}}"
-                    clickAction: "{{url | default(None)}}"
-                    actions: "{{app_actions}}"
-
-          # Notifica dall'app companion ad iOS
-          - alias: "notify_app è stato passato dal chiamante. Notifica ad iOS"
-            conditions: "{{ notify_app is defined and notify_app in iphones }}"
-            sequence:
-              - service: "{{notify_app}}"
+              if: "{{repeat.item in iphones}}"
+              then:
+                # Notifica dall'app companion ad iOS
+                service: "{{repeat.item}}"
                 data:
                   title: "{{title | default('Notifica da casa')}}"
                   message: "{{message}}"
@@ -484,6 +494,28 @@ script:
                         name: "{{channel_var}}"
                         critical: "{{'1' if critical_var else '0'}}"
                         volume: "{{critical_volume | default(iphones_critical_volume)}}"
+              else:
+                # Notifica dall'app companion ad Android
+                service: "{{repeat.item}}"
+                data:
+                  title: "{{title | default('Notifica da casa')}}"
+                  message: "{{message}}"
+                  data:
+                    video: "{{attachment_video_android}}"
+                    image: "{{attachment_image_android}}"
+                    group: "{{group | default(channel) | default('info')}}"
+                    channel: "{{channel_var}}"
+                    tag: "{{tag | default('')}}"
+                    icon_url: "/local/notify_{{icon | default(channel) | default(group) | default('info')}}.png"
+                    ttl: 0
+                    priority: high
+                    importance: "{{'high' if critical_var else 'default'}}"
+                    color: "{{'red' if critical_var else ''}}"
+                    ledColor: "{{'red' if critical_var else ''}}"
+                    persistent: "{{critical_var}}"
+                    subject: "{{subtitle | default(None)}}"
+                    clickAction: "{{url | default(None)}}"
+                    actions: "{{app_actions}}"
 
       # Sezione notifica Pushover
       - alias: "Notifica Pushover"
