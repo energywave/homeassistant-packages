@@ -1,5 +1,5 @@
 # -------------------------------------------------------------------------------------------------
-# Package Multinotify - Ver. 3.4 beta
+# Package Multinotify - Ver. 3.4.1 beta
 # Descrizione: script multinotify per gestire l'invio di notifiche alle app di Home Assistant ed
 #              altre app e dispositivi multimediali con una unica azione.
 #              I dispositivi Alexa metteranno in paura l'eventuale
@@ -44,7 +44,7 @@
 #   - ATTENZIONE! Il parametro critical di multinotify non ha più il significato precedente ma ora, se impostato a true,
 #     specifica una notifica che ignora la modalità silenziosa del telefono (sia Android che iPhone). Default = false.
 # Ver. 3.3 - 09/08/2022
-#   - Aggiunti parametri critical_volume (solo iOS), subtitle (Android/iOS) e url (Android/iOS), 
+#   - Aggiunti parametri critical_volume (solo iOS), subtitle (Android/iOS) e url (Android/iOS),
 #     per le notifiche all'app companion (credit: Francesco Calamita, GRAZIE!)
 #   - Nel calcolo della durata dell'annuncio Alexa implementata RegEx che rimuove tutti i TAG SSML eventualmente presenti.
 #     In questo modo il calcolo della durata è ora più fedele alla frase pronunciata anche in presenza di tag SSML.
@@ -54,15 +54,20 @@
 #   - Aggiunti input_text contenenti gli ultimi annunci Alexa e TTS, usabili da UI (stato) o da
 #     riprodurre su Alexa e TTS (attributo message). La differenza tra i due è l'eventuale SSML, filtrato nello stato.
 # Ver. 3.4 - 11/08/2022
-#   - Aggiunto parametro alexa_type che permette di scegliere se fare gli annunci con "announce" (con din don e sincronizzati tra più Echo) 
+#   - Aggiunto parametro alexa_type che permette di scegliere se fare gli annunci con "announce" (con din don e sincronizzati tra più Echo)
 #     oppure "tts" (senza din don ma non sincronizzati tra più Echo)
 #   - Aggiunto supporto ad url e critical su PushOver (usa i parametri che già ci sono)
 #   - Aggiunto parametro app_actions. Il contenuto è yaml e va formattato come si formatterebbe per il servizio di notifica app companion.
-#   - Aggiunto parametro attachment. Si può specificare un file in www usando "/local/file.jpg" oppure in media usando "/media/local/video.mp4" 
+#   - Aggiunto parametro attachment. Si può specificare un file in www usando "/local/file.jpg" oppure in media usando "/media/local/video.mp4"
 #     o ancora su un sito web pubblico usando "https://henriksozzi.it/wp-content/uploads/2020/12/Henrik-Sozzi-small.jpg". Il tipo di allegato
 #     (immagine, video o audio) è automaticamente determinato dall'estensione del file.
-#     Ma soprattutto è possibile specificare l'entity_id di una propria telecamera per allegare automaticamente uno snapshot alla notifica 
+#     Ma soprattutto è possibile specificare l'entity_id di una propria telecamera per allegare automaticamente uno snapshot alla notifica
 #     su Android (usa il proxy) ed uno snapshot che quando espanso mostra lo streaming MPEG della cam su iOS.
+# Ver. 3.4.1 - 11/08/2022
+#   - bugfix orari DND
+#   - Gli orari DND, se non impostati, vengono inizializzati a 23:00 - 09:00 (come prima di averli parametrici)
+#   - Card invio messaggi manuali tolta da multinotify_ui.yaml ed inserita in nuovo file multinotify_card.yml
+#   - Aggiunta card (dal design spartano ma funzionale) multinotify_card_config.yml utile in una plancia di configurazione
 # -------------------------------------------------------------------------------------------------
 # Distribuito con licenza: CC BY-NC-SA 4.0
 # Formato leggibile da un essere umano: https://creativecommons.org/licenses/by-nc-sa/4.0/deed.it
@@ -423,10 +428,13 @@ script:
           {{attachment}}
         {% endif %}
     sequence:
+      # Preparazione
+      - alias: "Impostazione eventuali campi non inizializzati"
+        service: script.multinotify_dnd_init
+
       # Sezione messaggio all'app
       - alias: "Notifica App"
         choose:
-
           # Notifica dall'app companion ad Android
           - alias: "notify_app è stato passato dal chiamante. Notifica ad ANDROID"
             conditions: "{{ notify_app is defined and notify_app not in iphones }}"
@@ -506,8 +514,8 @@ script:
                   - condition: template
                     value_template: "{{ alexa_force | default(false)}}"
                   - condition: time
-                    after: input_datetime.multinotify_dnd_start
-                    before: input_datetime.multinotify_dnd_end
+                    after: input_datetime.multinotify_dnd_end
+                    before: input_datetime.multinotify_dnd_start
             sequence:
               # script.multinotify_alexa_pre: salvo volume precedente, imposto volume e metto in pausa eventuale musica su tutti i dispositivi Alexa coinvolti
               - variables:
@@ -582,8 +590,8 @@ script:
                   - condition: template
                     value_template: "{{ tts_force | default(false)}}"
                   - condition: time
-                    after: input_datetime.multinotify_dnd_start
-                    before: input_datetime.multinotify_dnd_end
+                    after: input_datetime.multinotify_dnd_end
+                    before: input_datetime.multinotify_dnd_start
             sequence:
               # script.multinotify_tts_pre: salvo volume precedente, imposto volume e metto in pausa eventuale musica su tutti i dispositivi coinvolti
               - variables:
@@ -645,6 +653,23 @@ script:
                     - service: script.multinotify_tts_post3
                       data:
                         target: "{{entity_id}}"
+
+  multinotify_dnd_init:
+    alias: "Inizializzazione DND per multinotify"
+    description: "Se gli orari DND non sono stati impostati mette il default per evitare che le notifiche non vadano mai per default"
+    sequence:
+      if: "{{is_state('input_datetime.multinotify_dnd_end', '00:00:00') and is_state('input_datetime.multinotify_dnd_start', '00:00:00')}}"
+      then:
+        - service: input_datetime.set_datetime
+          target:
+            entity_id: input_datetime.multinotify_dnd_end
+          data:
+            time: "09:00:00"
+        - service: input_datetime.set_datetime
+          target:
+            entity_id: input_datetime.multinotify_dnd_start
+          data:
+            time: "23:00:00"
 
 automation:
   # Risolve il bug di attributo volume_level non presente all'avvio di Home Assistant
