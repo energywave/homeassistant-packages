@@ -1,5 +1,5 @@
 # -------------------------------------------------------------------------------------------------
-# Package Multinotify - Ver. 3.3
+# Package Multinotify - Ver. 3.4 beta
 # Descrizione: script multinotify per gestire l'invio di notifiche alle app di Home Assistant ed
 #              altre app e dispositivi multimediali con una unica azione.
 #              I dispositivi Alexa metteranno in paura l'eventuale
@@ -53,6 +53,16 @@
 #     necessario assegnarli un valore! Io uso 9:00 - 23:00.
 #   - Aggiunti input_text contenenti gli ultimi annunci Alexa e TTS, usabili da UI (stato) o da
 #     riprodurre su Alexa e TTS (attributo message). La differenza tra i due è l'eventuale SSML, filtrato nello stato.
+# Ver. 3.4 - 11/08/2022
+#   - Aggiunto parametro alexa_type che permette di scegliere se fare gli annunci con "announce" (con din don e sincronizzati tra più Echo) 
+#     oppure "tts" (senza din don ma non sincronizzati tra più Echo)
+#   - Aggiunto supporto ad url e critical su PushOver (usa i parametri che già ci sono)
+#   - Aggiunto parametro app_actions. Il contenuto è yaml e va formattato come si formatterebbe per il servizio di notifica app companion.
+#   - Aggiunto parametro attachment. Si può specificare un file in www usando "/local/file.jpg" oppure in media usando "/media/local/video.mp4" 
+#     o ancora su un sito web pubblico usando "https://henriksozzi.it/wp-content/uploads/2020/12/Henrik-Sozzi-small.jpg". Il tipo di allegato
+#     (immagine, video o audio) è automaticamente determinato dall'estensione del file.
+#     Ma soprattutto è possibile specificare l'entity_id di una propria telecamera per allegare automaticamente uno snapshot alla notifica 
+#     su Android (usa il proxy) ed uno snapshot che quando espanso mostra lo streaming MPEG della cam su iOS.
 # -------------------------------------------------------------------------------------------------
 # Distribuito con licenza: CC BY-NC-SA 4.0
 # Formato leggibile da un essere umano: https://creativecommons.org/licenses/by-nc-sa/4.0/deed.it
@@ -98,6 +108,8 @@
 # iphones: indicare nella stringa i nomi esatti dei servizi notify corrispondenti a dispositivi iphone, separati da virgola.
 #          è necessario inserire anche i gruppi di iphone (se sono gruppi misti indicarli come iphone).
 #          Esempio: "notify.iphone_di_mario, notify.tutti_gli_iphones, notify.tutti_gli_iphone_e_un_android"
+# iphones_critical_volume: indicare il volume che si desidera su iphone per le notifiche critiche alle quali non si specifica il relativo
+#                          parametro chiamando multinotify
 homeassistant:
   customize:
     package.node_anchors:
@@ -188,9 +200,9 @@ script:
                 target:
                   entity_id: "{{target}}"
 
-  # Notifica intelligente App / Alexa / Google Home
+  # Multinotify
   multinotify3:
-    alias: "Notifica intelligente"
+    alias: "Multinotify beta"
     description: "Invia una notifica alle app, Alexa e Google Home, con gestione musica, volume e relativo ripristino oltre all'attesa di un tempo pari a quello dell'annuncio"
     mode: queued
     max: 10
@@ -225,6 +237,15 @@ script:
             integration: alexa_media
             domain: media_player
         example: "media_player.ovunque"
+      alexa_type:
+        name: "Tipo annuncio Alexa"
+        description: "Tipo annuncio su Alexa"
+        example: "announce"
+        selector:
+          select:
+            options:
+              - announce
+              - tts
       alexa_volume:
         name: "Volume Alexa"
         description: "Volume che si desidera impostare per l'annuncio sui dispositivi Alexa indicati da alexa_target"
@@ -313,12 +334,6 @@ script:
         selector:
           text:
         example: "fulmini"
-      critical:
-        name: "Critical app"
-        description: 'impostare a "true" per inviare una notifica che suona indipendentemente dalla modalità di silenzioso del telefono (ad es. per antifurto). Se "false" o non specificata la notifica sarà invece normale e rispetterà la modalità del telefono (default: false)'
-        selector:
-          boolean:
-        example: "true"
       critical_volume:
         name: "Volume critical"
         description: "Volume che si desidera impostare per le notifiche critical"
@@ -329,18 +344,24 @@ script:
             max: 1
             step: 0.1
             mode: "slider"
-      url:
-        name: "URL"
-        description: "Permette di indicare un url da aprire cliccando sulla notifica"
-        selector:
-          text:
-        example: "/lovelace/cameras"
       subtitle:
         name: "Sottotitolo/Soggetto"
         description: "Sottotitolo (iOS) o Soggetto (Android) della notifica"
         selector:
           text:
         example: "Avviso importante"
+      app_actions:
+        name: "Azioni notifica"
+        description: "Elenco di azioni per richiedere un input all'utente. Su android max 3, su iOS max 10. Ogni elemento deve avere action e title"
+        selector:
+          object:
+        example: |
+          - action: "YES"
+            title: "Si"
+          - action: "NO"
+            title: "No"
+          - action: "MAYBE"
+            title: "Forse"
 
       # Pushover
       notify_pushover:
@@ -350,25 +371,73 @@ script:
           text:
         example: "notify.pushover"
 
+      # In comune per notifiche app e pushover
+      url:
+        name: "URL"
+        description: "Permette di indicare un url da aprire cliccando sulla notifica"
+        selector:
+          text:
+        example: "/lovelace/cameras"
+      critical:
+        name: "Critical app"
+        description: 'impostare a "true" per inviare una notifica ad altissima priorità che suona indipendentemente dalla modalità di silenzioso del telefono (ad es. per antifurto). Se "false" o non specificata la notifica sarà invece normale e rispetterà la modalità del telefono (default: false)'
+        selector:
+          boolean:
+        example: "true"
+      attachment:
+        name: "Allegato"
+        description: "Specificare un URL relativo o assoluto. Ogni piattaforma ha i suoi limiti che vanno verificati. Si può specificare l'entity_id di una telecamera"
+        selector:
+          text:
+        example: /media/local/file.jpg
     variables:
       default_volume: *default_volume
       iphones: *iphones
       critical_var: "{{critical | default(false)}}"
       channel_var: "{{(channel | default(group) | default('info')) if not critical_var else 'alarm_stream'}}"
       iphones_critical_volume: *iphones_critical_volume
+      attachment_video_android: >
+        {% if attachment is defined and attachment.endswith((".mp4", ".mpg", ".mpeg", ".avi")) %}
+          {{attachment}}
+        {% endif %}
+      attachment_video_ios: >
+        {% if attachment is defined %}
+          {{attachment if not attachment.startswith('camera.')}}
+        {% endif %}
+      camerastream_ios: >
+        {% if attachment is defined %}
+          {{attachment if attachment.startswith('camera.')}}
+        {% endif %}
+      attachment_image_android: >
+        {% if attachment is defined and attachment.startswith("camera.")%}
+          {{"/api/camera_proxy/" ~ attachment}}
+        {% elif attachment is defined and attachment.endswith((".jpg", ".jpeg", ".gif", ".png")) %}
+          {{attachment}}
+        {% endif %}
+      attachment_image_ios: >
+        {% if attachment is defined and attachment.endswith((".jpg", ".jpeg", ".gif", ".png")) %}
+          {{attachment}}
+        {% endif %}
+      attachment_audio_ios: >
+        {% if attachment is defined and attachment.endswith((".aiff", ".wav", ".mp3")) %}
+          {{attachment}}
+        {% endif %}
     sequence:
       # Sezione messaggio all'app
       - alias: "Notifica App"
         choose:
+
+          # Notifica dall'app companion ad Android
           - alias: "notify_app è stato passato dal chiamante. Notifica ad ANDROID"
             conditions: "{{ notify_app is defined and notify_app not in iphones }}"
             sequence:
-              # Notifica dall'app companion ad Android
               - service: "{{notify_app}}"
                 data:
                   title: "{{title | default('Notifica da casa')}}"
                   message: "{{message}}"
                   data:
+                    video: "{{attachment_video_android}}"
+                    image: "{{attachment_image_android}}"
                     group: "{{group | default(channel) | default('info')}}"
                     channel: "{{channel_var}}"
                     tag: "{{tag | default('')}}"
@@ -381,26 +450,33 @@ script:
                     persistent: "{{critical_var}}"
                     subject: "{{subtitle | default(None)}}"
                     clickAction: "{{url | default(None)}}"
+                    actions: "{{app_actions}}"
 
+          # Notifica dall'app companion ad iOS
           - alias: "notify_app è stato passato dal chiamante. Notifica ad iOS"
             conditions: "{{ notify_app is defined and notify_app in iphones }}"
             sequence:
-              # Notifica dall'app companion ad iOS
               - service: "{{notify_app}}"
                 data:
                   title: "{{title | default('Notifica da casa')}}"
                   message: "{{message}}"
                   data:
+                    video: "{{attachment_video_ios}}"
+                    image: "{{attachment_image_ios}}"
+                    audio: "{{attachment_audio_ios}}"
                     subtitle: "{{subtitle | default(None)}}"
                     group: "{{group | default(channel) | default('info')}}"
                     tag: "{{tag | default(None)}}"
                     url: "{{url | default(None)}}"
+                    entity_id: "{{camerastream_ios}}"
+                    actions: "{{app_actions}}"
                     push:
                       interruption-level: "{{'critical' if critical_var else 'active'}}"
                       sound:
                         name: "{{channel_var}}"
                         critical: "{{'1' if critical_var else '0'}}"
                         volume: "{{critical_volume | default(iphones_critical_volume)}}"
+
       # Sezione notifica Pushover
       - alias: "Notifica Pushover"
         choose:
@@ -412,6 +488,10 @@ script:
                 data:
                   title: "{{title | default('Notifica da casa')}}"
                   message: "{{message}}"
+                  data:
+                    attachment: "{{attachment}}"
+                    url: "{{url | default(None)}}"
+                    priority: "{{2 if critical_var else 0}}"
 
       # Sezione messaggio Alexa
       - alias: "Notifica Alexa"
@@ -468,7 +548,7 @@ script:
                 data:
                   message: "{{message}}"
                   data:
-                    type: announce
+                    type: "{{alexa_type | default('announce')}}"
                   target: "{{alexa_target}}"
               - delay:
                   seconds: "{{(5 + (pure_message.count(', ') + pure_message.count('. ') + pure_message.count('! ') + pure_message.count('? ') + pure_message.count(': ') + pure_message.count('; ')) | float(0) * 0.35 + (pure_message | length) * 0.06) | round(default=0)}}"
