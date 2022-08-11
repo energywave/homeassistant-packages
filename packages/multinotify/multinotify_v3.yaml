@@ -1,5 +1,5 @@
 # -------------------------------------------------------------------------------------------------
-# Package Multinotify - Ver. 3.5 beta
+# Package Multinotify - Ver. 3.5.1 beta
 # Descrizione: script multinotify per gestire l'invio di notifiche alle app di Home Assistant ed
 #              altre app e dispositivi multimediali con una unica azione.
 #              I dispositivi Alexa metteranno in paura l'eventuale
@@ -79,6 +79,8 @@
 #     ma NON entrambi i tipi nello stesso gruppo. In tal caso specificare singolarmente i servizi come nell'esempio sopra.
 #   - bugfix se non passati allegati ad iOS
 #   - icon: ora funziona anche su iOS (viene passato come allegato immagine, visto che non c'è un'icona)
+# Ver. 3.5.1 - 12/08/2022 - Grazie ancora a Vito Schiavone
+#   - Bugfixes notifiche ad iOS
 # -------------------------------------------------------------------------------------------------
 # Distribuito con licenza: CC BY-NC-SA 4.0
 # Formato leggibile da un essere umano: https://creativecommons.org/licenses/by-nc-sa/4.0/deed.it
@@ -418,8 +420,6 @@ script:
       attachment_video_android: >
         {% if attachment is defined and attachment.endswith((".mp4", ".mpg", ".mpeg", ".avi")) %}
           {{attachment}}
-        {% else %}
-          None
         {% endif %}
       attachment_video_ios: >
         {% if attachment is defined %}
@@ -438,14 +438,12 @@ script:
           {{"/api/camera_proxy/" ~ attachment}}
         {% elif attachment is defined and attachment.endswith((".jpg", ".jpeg", ".gif", ".png")) %}
           {{attachment}}
-        {% else %}
-          None
         {% endif %}
       attachment_image_ios: >
         {% if attachment is defined and attachment.endswith((".jpg", ".jpeg", ".gif", ".png")) %}
           {{attachment}}
         {% else %}
-          "/local/notify_{{icon | default(channel) | default(group) | default('info')}}.png"
+          None
         {% endif %}
       attachment_audio_ios: >
         {% if attachment is defined and attachment.endswith((".aiff", ".wav", ".mp3")) %}
