@@ -63,6 +63,7 @@ script:
           message: "{{msg}}"
           alexa_target: "{{dest}}"
           alexa_volume: "{{(states('input_number.multinotify_volume') | float(60) / 10) | round(1)}}"
+          alexa_force: true
       - alias: "Termine esecuzione"
         service: input_boolean.turn_off
         data:

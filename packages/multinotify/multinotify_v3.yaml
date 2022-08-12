@@ -1,17 +1,13 @@
 # -------------------------------------------------------------------------------------------------
-# Package Multinotify - Ver. 3.5.1 beta
-# Descrizione: script multinotify per gestire l'invio di notifiche alle app di Home Assistant ed
-#              altre app e dispositivi multimediali con una unica azione.
-#              I dispositivi Alexa metteranno in paura l'eventuale
-#              musica, imposteranno il volume specificato (o 0.6 se non specificato),
-#              riprodurranno il messaggio e infine riprenderanno la riproduzione, se era in corso
-#              e infine ripristineranno il volume precedente.
-#              Destinazioni supportate:
-#               - App Companion (Android e iPhone)
-#               - Alexa (singole, gruppi, o elenco)
-#               - Dispositivi multimediali tra cui Google Home (singoli, gruppi o elenco)
-#               - Pushover
+# Package Multinotify - Ver. 3.6 beta
+# Descrizione: script multinotify per gestire l'invio di notifiche con un unico servizio alle seguenti piattaforme:
+#               - App companion (Android e iOS)
+#               - PushOver
+#               - HTML5
+#               - Alexa (singole, gruppi, elenco)
+#               - Google Home (e altri riproduttore TTS)
 # Articolo: https://henriksozzi.it/2022/01/package-multinotify-notifiche-su-alexa-e-app/
+# Repository: https://github.com/energywave/multinotify
 # -------------------------------------------------------------------------------------------------
 # Autore: Henrik Sozzi
 # sito: https://henriksozzi.it
@@ -78,15 +74,22 @@
 #     Si possono ancora usare i gruppi ma SOLO se contengono dispositivi omogenei più smartphone android o più smartphone iOS
 #     ma NON entrambi i tipi nello stesso gruppo. In tal caso specificare singolarmente i servizi come nell'esempio sopra.
 #   - bugfix se non passati allegati ad iOS
-#   - icon: ora funziona anche su iOS (viene passato come allegato immagine, visto che non c'è un'icona)
 # Ver. 3.5.1 - 12/08/2022 - Grazie ancora a Vito Schiavone
 #   - Bugfixes notifiche ad iOS
+# Ver. 3.6 - 12/08/2022
+#   - Implementate notifiche HTML5! Supporta servizi multipli (browser diversi), icone, tag, critical, url, azioni e allegati
+#     (immagini o entity_id di una telecamera: fa snapshot e lo invia!)
+#   - Reso funzionante attachment su pushover quando specificata una immagine o un'entity_id di una telecamera (fa snapshot e lo invia!)
+#   - Definitivamente risolti i problemi su iOS.
 # -------------------------------------------------------------------------------------------------
 # Distribuito con licenza: CC BY-NC-SA 4.0
 # Formato leggibile da un essere umano: https://creativecommons.org/licenses/by-nc-sa/4.0/deed.it
 # Formato per gli avvocati: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
 # -------------------------------------------------------------------------------------------------
-# Requisiti:
+
+####################################################################################
+######################## REQUISITI, LEGGERE CON ATTENZIONE: ########################
+####################################################################################
 #  - Alexa Media Player (solo per notifiche Alexa): https://github.com/custom-components/alexa_media_player
 #  - App Companion collegate (solo per notifiche app): https://companion.home-assistant.io/
 #  - Script set_state specifico (solo per notifiche Alexa):
@@ -96,6 +99,10 @@
 #     ATTENZIONE! Lo script sul sito henriksozzi.it è stato aggiornato il 10/1/2022 con la versione che permette
 #     la creazione di nuove entità! Se hai set_state da prima di questa data o da un'altro sito verifica che sia
 #     la versione corretta, altrimenti non funzionerà!
+#  - Se vuoi inviare snapshot delle telecamere a PushOver devi creare la cartella /config/tmp e assicurarti che sia
+#    inclusa in allowlist_external_dirs
+#  - Se vuoi inviare snapshot delle telecamere a HTML5 devi creare la cartella /config/www/cam e assicurarti che sia
+#    inclusa in allowlist_external_dirs
 
 # multinotify
 # ------------------------------------------
@@ -226,28 +233,22 @@ script:
     mode: queued
     max: 10
     fields:
-      # Campi generici
+      # Campi generici validi per tutti i tipi di notifica
       title:
         name: "Titolo"
-        description: "Titolo della notifica"
+        description: "Titolo della notifica [ Alexa / TTS / Android / iOS / PushOver / HTML5 ]"
         selector:
           text:
         example: "Avviso importante"
       message:
         name: "Messaggio"
-        description: "Testo da notificare che verrà letto ed inviato come corpo della notifica"
+        description: "Testo da notificare che verrà letto ed inviato come corpo della notifica [ Alexa / TTS / Android / iOS / PushOver / HTML5 ]"
         selector:
           text:
         example: "Un dispositivo non sta funzionando"
         required: true
 
       # Alexa
-      alexa_message:
-        name: "Messaggio Alexa (se diverso)"
-        description: "Testo che Alexa dovrà pronunciare, se differente da message. Se non specificato verrà usato message."
-        selector:
-          text:
-        example: '<say-as interpret-as="interjection">yippii</say-as>. Questo verrebbe male nelle notifiche dell''app!'
       alexa_target:
         name: "Target Alexa"
         description: "Dispositivo, elenco di dispositivi, gruppo Home Assistant, gruppo Alexa o entity speciale ovunque a cui inviare la notifica"
@@ -256,9 +257,15 @@ script:
             integration: alexa_media
             domain: media_player
         example: "media_player.ovunque"
+      alexa_message:
+        name: "Messaggio Alexa (se diverso)"
+        description: "Testo che Alexa dovrà pronunciare, se differente da message. Se non specificato verrà usato message. [Alexa]"
+        selector:
+          text:
+        example: '<say-as interpret-as="interjection">yippii</say-as>. Questo verrebbe male nelle notifiche dell''app!'
       alexa_type:
         name: "Tipo annuncio Alexa"
-        description: "Tipo annuncio su Alexa"
+        description: "Tipo annuncio su Alexa [Alexa]"
         example: "announce"
         selector:
           select:
@@ -267,7 +274,7 @@ script:
               - tts
       alexa_volume:
         name: "Volume Alexa"
-        description: "Volume che si desidera impostare per l'annuncio sui dispositivi Alexa indicati da alexa_target"
+        description: "Volume che si desidera impostare per l'annuncio sui dispositivi Alexa indicati da alexa_target [Alexa]"
         example: "0.6"
         selector:
           number:
@@ -277,18 +284,12 @@ script:
             mode: "slider"
       alexa_force:
         name: "Forza Alexa"
-        description: "True per forzare la notifica Alexa al di fuori dell'orario, False o non definita per riprodurre la notifica Alexa solo in orario consono"
+        description: "True per forzare la notifica Alexa al di fuori dell'orario, False o non definita per riprodurre la notifica Alexa solo in orario consono [Alexa]"
         selector:
           boolean:
         example: "false"
 
       # TTS (Google Home)
-      tts_message:
-        name: "Messaggio TTS (se diverso)"
-        description: "Testo che i media player (Google Home) dovranno pronunciare, se differente da message. Se non specificato verrà usato message."
-        selector:
-          text:
-        example: "Ciao, io sono Google Home"
       tts_target:
         name: "Target TTS"
         description: "Dispositivo, elenco di dispositivi o gruppo di dispositivi media player che pronunceranno la notifica"
@@ -296,9 +297,15 @@ script:
           entity:
             domain: media_player
         example: "media_player.ovunque"
+      tts_message:
+        name: "Messaggio TTS (se diverso)"
+        description: "Testo che i media player (Google Home) dovranno pronunciare, se differente da message. Se non specificato verrà usato message. [TTS]"
+        selector:
+          text:
+        example: "Ciao, io sono Google Home"
       tts_volume:
         name: "Volume TTS"
-        description: "Volume che si desidera impostare per l'annuncio sui dispositivi media player indicati da tts_target"
+        description: "Volume che si desidera impostare per l'annuncio sui dispositivi media player indicati da tts_target [TTS]"
         example: "0.6"
         selector:
           number:
@@ -308,7 +315,7 @@ script:
             mode: "slider"
       tts_service:
         name: "Servizio TTS"
-        description: "Servizio da usare per la generazione del messaggio TTS"
+        description: "Servizio da usare per la generazione del messaggio TTS [TTS]"
         example: "tts.cloud_say"
         selector:
           select:
@@ -317,72 +324,21 @@ script:
               - tts.google_translate_say
       tts_force:
         name: "Forza TTS"
-        description: "True per forzare la notifica TTS al di fuori dell'orario, False o non definita per riprodurre la notifica TTS solo in orario consono"
+        description: "True per forzare la notifica TTS al di fuori dell'orario, False o non definita per riprodurre la notifica TTS solo in orario consono [TTS]"
         selector:
           boolean:
         example: "false"
 
-      # App
+      # --- NOTIfICHE ALLE VARIE APP ---
+      # App companion
       notify_app:
-        name: "Servizio notifica app"
+        name: "Servizi notifica app"
         description: "Il nome del servizio di notifica app oppure l'elenco dei servizi di notifica app o ancora non compilare per non inviare notifiche all'app"
         selector:
           object:
         example: |
           - notify.mio_android
           - notify.suo_ios
-      group:
-        name: "Gruppo app"
-        description: 'Stringa identificativa del gruppo di notifiche. Sul telefono le notifiche saranno raggruppate in base a questo valore. Se non specificato sarà usato channel o "info"'
-        selector:
-          text:
-        example: "alarm"
-      channel:
-        name: "Canale app"
-        description: 'Stringa identificativa del canale, ovvero il gruppo di notifiche con impostazioni a se stanti sul telefono. Se non specificato sarà usato group o "info"'
-        selector:
-          text:
-        example: "Generic"
-      icon:
-        name: "Icona app"
-        description: 'nome del file (senza percorso, senza notify_ e senza estensione) che deve essere usato da mostrare nella notifica. nell''esempio "warning" diventerà "/local/notify_warning.png". Se non specificato userà channel, group o "info"'
-        selector:
-          text:
-        example: "warning"
-      tag:
-        name: "Tag app"
-        description: "Campo tag della notifica ad app. Se impostato sul telefono l'eventuale notifica sarà sostituita alla seguente con tag uguale"
-        selector:
-          text:
-        example: "fulmini"
-      critical_volume:
-        name: "Volume critical"
-        description: "Volume che si desidera impostare per le notifiche critical"
-        example: "0.6"
-        selector:
-          number:
-            min: 0
-            max: 1
-            step: 0.1
-            mode: "slider"
-      subtitle:
-        name: "Sottotitolo/Soggetto"
-        description: "Sottotitolo (iOS) o Soggetto (Android) della notifica"
-        selector:
-          text:
-        example: "Avviso importante"
-      app_actions:
-        name: "Azioni notifica"
-        description: "Elenco di azioni per richiedere un input all'utente. Su android max 3, su iOS max 10. Ogni elemento deve avere action e title"
-        selector:
-          object:
-        example: |
-          - action: "YES"
-            title: "Si"
-          - action: "NO"
-            title: "No"
-          - action: "MAYBE"
-            title: "Forse"
 
       # Pushover
       notify_pushover:
@@ -392,44 +348,105 @@ script:
           text:
         example: "notify.pushover"
 
-      # In comune per notifiche app e pushover
-      url:
-        name: "URL"
-        description: "Permette di indicare un url da aprire cliccando sulla notifica"
+      # HTML5
+      notify_html5:
+        name: "Servizi notifica HTML5"
+        description: "Il nome del servizio di notifica HTML5  oppure l'elenco dei servizi di notifica HTML5 o ancora non compilare per non inviare notifiche HTML5"
+        selector:
+          object:
+        example: |
+          - notify.html5_mio_pc
+          - notify.html5_altro_pc
+
+      # Parametri delle varie app (compatibilità in fondo alle descrizioni)
+      icon:
+        name: "Icona"
+        description: 'nome del file (senza percorso, senza notify_ e senza estensione) che deve essere usato da mostrare nella notifica. nell''esempio "warning" diventerà "/local/notify_warning.png". Se non specificato userà channel, group o "info" [ Android / HTML5]'
         selector:
           text:
-        example: "/lovelace/cameras"
+        example: "warning"
+      tag:
+        name: "Tag"
+        description: "Campo tag della notifica ad app e HTML5. Se impostato l'eventuale notifica sarà sostituita alla seguente con tag uguale e sarà possibile eliminarla [ Android / iOS / HTML5 ]"
+        selector:
+          text:
+        example: "fulmini"
+      group:
+        name: "Gruppo app"
+        description: "Stringa identificativa del gruppo di notifiche. Sul telefono le notifiche saranno raggruppate in base a questo valore. Se non specificato sarà usato channel o \"info\" [ Android / iOS ]"
+        selector:
+          text:
+        example: "alarm"
+      channel:
+        name: "Canale app"
+        description: "Stringa identificativa del canale, ovvero il gruppo di notifiche con impostazioni a se stanti sul telefono. Se non specificato sarà usato group o \"info\". Se critical: true verrà ignorato.  [ Android ]"
+        selector:
+          text:
+        example: "Generic"
+      subtitle:
+        name: "Sottotitolo/Soggetto"
+        description: "Sottotitolo (iOS) o Soggetto (Android) della notifica  [ Android / iOS ]"
+        selector:
+          text:
+        example: "Avviso importante"
       critical:
         name: "Critical app"
-        description: 'impostare a "true" per inviare una notifica ad altissima priorità che suona indipendentemente dalla modalità di silenzioso del telefono (ad es. per antifurto). Se "false" o non specificata la notifica sarà invece normale e rispetterà la modalità del telefono (default: false)'
+        description: 'impostare a "true" per inviare una notifica alla massima priorità. Sulle app suonerà indipendentemente dalla modalità di silenzioso del telefono (ad es. per antifurto), su HTML5 non farà scomparire la notifica dallo schermo. Se "false" o non specificata la notifica sarà invece normale e rispetterà la modalità del telefono (default: false) [ Android / iOS / HTML5 ] '
         selector:
           boolean:
         example: "true"
+      critical_volume:
+        name: "Volume critical"
+        description: "Volume che si desidera impostare per le notifiche critical  [ iOS ]"
+        example: "0.6"
+        selector:
+          number:
+            min: 0
+            max: 1
+            step: 0.1
+            mode: "slider"
+      url:
+        name: "URL"
+        description: "Permette di indicare un url da aprire cliccando sulla notifica [Android / iOS / PushOver / HTML5 ]"
+        selector:
+          text:
+        example: "/lovelace/cameras"
+      app_actions:
+        name: "Azioni notifica"
+        description: "Elenco di azioni per richiedere un input all'utente. Su android max 3, su iOS max 10. Ogni elemento deve avere action e title [ iOS / Android / HTML5 ]"
+        selector:
+          object:
+        example: |
+          - action: "YES"
+            icon: /local/yes.png
+            title: "Si"
+          - action: "NO"
+            title: "No"
+          - action: "MAYBE"
+            title: "Forse"
       attachment:
         name: "Allegato"
-        description: "Specificare un URL relativo o assoluto. Ogni piattaforma ha i suoi limiti che vanno verificati. Si può specificare l'entity_id di una telecamera"
+        description: "Specificare un URL relativo o assoluto. Ogni piattaforma ha i suoi limiti che vanno verificati. Si può specificare l'entity_id di una telecamera [ Android / iOS / Pushover / HTML5 ]"
         selector:
           text:
         example: /media/local/file.jpg
+      # --- FINE PARAMETRI ---
+
     variables:
       default_volume: *default_volume
       iphones: *iphones
       critical_var: "{{critical | default(false)}}"
       channel_var: "{{(channel | default(group) | default('info')) if not critical_var else 'alarm_stream'}}"
       iphones_critical_volume: *iphones_critical_volume
-      attachment_video_android: >
+      attachment_video: >
         {% if attachment is defined and attachment.endswith((".mp4", ".mpg", ".mpeg", ".avi")) %}
           {{attachment}}
-        {% endif %}
-      attachment_video_ios: >
-        {% if attachment is defined %}
-          {{attachment if not attachment.startswith('camera.') else None}}
         {% else %}
           None
         {% endif %}
       camerastream_ios: >
-        {% if attachment is defined %}
-          {{attachment if attachment.startswith('camera.') else None}}
+        {% if attachment is defined and attachment.startswith('camera.') %}
+          {{attachment}}
         {% else %}
           None
         {% endif %}
@@ -438,6 +455,8 @@ script:
           {{"/api/camera_proxy/" ~ attachment}}
         {% elif attachment is defined and attachment.endswith((".jpg", ".jpeg", ".gif", ".png")) %}
           {{attachment}}
+        {% else %}
+          None
         {% endif %}
       attachment_image_ios: >
         {% if attachment is defined and attachment.endswith((".jpg", ".jpeg", ".gif", ".png")) %}
@@ -451,11 +470,53 @@ script:
         {% else %}
           None
         {% endif %}
+      camera_entity: >
+        {% if attachment is defined and attachment.startswith("camera.") %}
+          {{attachment}}
+        {% else %}
+          None
+        {% endif %}
+      snapshot_filename_pushover: >
+        {% if camera_entity is not none %}
+        {# /config/tmp/{{states[camera_entity].name}} {{ now().strftime('%Y%m%d-%H%M%S') }}.jpg #}
+          /config/tmp/{{states[camera_entity].name}} snapshot.jpg
+        {% else %}
+          None
+        {% endif %}
+      snapshot_filename_html5: >
+        {% if camera_entity is not none %}
+          {# /config/www/cam/{{states[camera_entity].name}} {{ now().strftime('%Y%m%d-%H%M%S') }}.jpg #}
+          /config/www/cam/{{states[camera_entity].name}} snapshot.jpg
+        {% else %}
+          None
+        {% endif %}
+      attachment_pushover: >
+        {% if attachment is defined and attachment.endswith((".jpg", ".jpeg", ".gif", ".png")) %}
+          {{ attachment | replace("/media/local/","/media/") | replace("/local/","/config/www/")}}
+        {% elif snapshot_filename_pushover is not none %}
+          {{snapshot_filename_pushover}}
+        {% else %}
+          None
+        {% endif %}
+      attachment_image_html5: >
+        {% if attachment is defined and attachment.endswith((".jpg", ".jpeg", ".gif", ".png")) %}
+          {{attachment}}
+        {% elif snapshot_filename_html5 is not none %}
+          {{snapshot_filename_html5 | replace("/config/www/", "/local/")}}
+        {% else %}
+          None
+        {% endif %}
       notify_apps: >
         {% if notify_app is defined and notify_app is string %}
           ['{{notify_app}}']
         {% elif notify_app is defined %}
           {{notify_app}}
+        {% endif %}
+      notify_html5s: >
+        {% if notify_html5 is defined and notify_html5 is string %}
+          ['{{notify_html5}}']
+        {% elif notify_html5 is defined %}
+          {{notify_html5}}
         {% endif %}
     sequence:
       # Preparazione
@@ -477,7 +538,7 @@ script:
                   title: "{{title | default('Notifica da casa')}}"
                   message: "{{message}}"
                   data:
-                    video: "{{attachment_video_ios}}"
+                    video: "{{attachment_video}}"
                     image: "{{attachment_image_ios}}"
                     audio: "{{attachment_audio_ios}}"
                     subtitle: "{{subtitle | default(None)}}"
@@ -499,7 +560,7 @@ script:
                   title: "{{title | default('Notifica da casa')}}"
                   message: "{{message}}"
                   data:
-                    video: "{{attachment_video_android}}"
+                    video: "{{attachment_video}}"
                     image: "{{attachment_image_android}}"
                     group: "{{group | default(channel) | default('info')}}"
                     channel: "{{channel_var}}"
@@ -517,19 +578,66 @@ script:
 
       # Sezione notifica Pushover
       - alias: "Notifica Pushover"
-        choose:
-          - alias: "notify_pushover è stato passato dal chiamante"
-            conditions: "{{ notify_pushover is defined }}"
-            sequence:
-              # Notifica da tutti i dispositivi connessi a Pushover
-              - service: "{{notify_pushover}}"
+        if: "{{ notify_pushover is defined }}"
+        then:  
+          - if: "{{camera_entity is not none}}"
+            then:
+              - service: camera.snapshot
+                target:
+                  entity_id: "{{camera_entity}}"
                 data:
-                  title: "{{title | default('Notifica da casa')}}"
-                  message: "{{message}}"
+                  filename: "{{snapshot_filename_pushover}}"
+          - service: "{{notify_pushover}}"
+            data:
+              title: "{{title | default('Notifica da casa')}}"
+              message: "{{message}}"
+              data:
+                attachment: "{{attachment_pushover}}"
+                url: "{{url | default(None)}}"
+                priority: "{{2 if critical_var else 0}}"
+
+      # Sezione HTML5
+      - alias: "Notifiche HTML"
+        if: "{{notify_html5 is defined}}"
+        then:
+          - if: "{{camera_entity is not none}}"
+            then:
+              - service: camera.snapshot
+                target:
+                  entity_id: "{{camera_entity}}"
+                data:
+                  filename: "{{snapshot_filename_html5}}"
+          - repeat:
+              for_each: "{{notify_html5s}}"
+              sequence:
+                if: "{{app_actions is defined and app_actions is not none}}"
+                then:
+                  service: "{{repeat.item}}"
                   data:
-                    attachment: "{{attachment}}"
-                    url: "{{url | default(None)}}"
-                    priority: "{{2 if critical_var else 0}}"
+                    title: "{{title | default('Notifica da casa')}}"
+                    message: "{{message}}"
+                    data:
+                      ttl: 0
+                      priority: high
+                      tag: "{{tag | default('')}}"
+                      url: "{{url | default(None)}}"
+                      actions: "{{app_actions}}"
+                      requireInteraction: "{{(critical == true)}}"
+                      image: "{{attachment_image_html5}}"
+                      icon: "/local/notify_{{icon | default(channel) | default(group) | default('info')}}.png"
+                else:
+                  service: "{{repeat.item}}"
+                  data:
+                    title: "{{title | default('Notifica da casa')}}"
+                    message: "{{message}}"
+                    data:
+                      ttl: 0
+                      priority: high
+                      tag: "{{tag | default('')}}"
+                      url: "{{url | default(None)}}"
+                      requireInteraction: "{{(critical == true)}}"
+                      image: "{{attachment_image_html5}}"
+                      icon: "/local/notify_{{icon | default(channel) | default(group) | default('info')}}.png"
 
       # Sezione messaggio Alexa
       - alias: "Notifica Alexa"
