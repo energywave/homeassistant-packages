@@ -1,0 +1,113 @@
+template:
+  # Sensori power riepilogativi, zone o tipologie dispositivi
+  - sensor:
+      - name: Piani inferiori power
+        state: "{{states('sensor.totale_power') | int(0) - states('sensor.piani_superiori_power') | int(0) - states('sensor.lavanderia_power') | int(0)}}"
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        unique_id: 87dbeb62-3afe-4d99-b1f7-4160a64e1973
+  - sensor:
+      - name: Lavanderia power
+        state: 0
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        unique_id: feb642e8-bc46-46df-956e-bb81244beeed
+  - sensor:
+      - name: Tapparelle power
+        state: >
+          {{ (states("sensor.tapparella_finestra_cucina_power") | float(0) + 
+          states("sensor.tapparella_portafinestra_cucina_power") | float(0) + 
+          states("sensor.tapparella_soggiorno_power") | float(0) +
+          states("sensor.tapparella_corridoio_power") | float(0) +
+          states("sensor.tapparella_bagno_power") | float(0) +
+          states("sensor.tapparella_scale_power") | float(0)) | round(2) }}
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        unique_id: 797e7893-4cbd-4c6a-a815-1df7953094c0
+  - sensor:
+      - name: Cucina power
+        state: "{{ (states('sensor.tostapane_power')|float(0) + states('sensor.cappa_power')|float(0)) | round(2)}}"
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        unique_id: fc3ba652-e133-4f73-a3ec-dd51f9b70fa1
+  - sensor:
+      - name: Luci power
+        state: >
+          {{(states("sensor.faretti_soggiorno_power") | float(0) +
+          states("sensor.soffitto_soggiorno_power") | float(0) + 
+          states("sensor.lampada_a_terra_power") | float(0) +
+          states("sensor.luce_tv_power") | float(0) +
+          states("sensor.luce_camera_power") | float(0) +
+          states("sensor.luce_letto_power") | float(0) +
+          states("sensor.luce_armadio_power") | float(0) +
+          states("sensor.luce_cucina_power") | float(0) +
+          states("sensor.tavolo_1_power") | float(0) +
+          states("sensor.tavolo_2_power") | float(0) +
+          states("sensor.tavolo_3_power") | float(0) +
+          states("sensor.luce_cappa_power") | float(0) +
+          states("sensor.faretto_front_power") | float(0) +
+          states("sensor.luce_tettoia_power") | float(0) +
+          states("sensor.albero_natale_power") | float(0) +
+          states("sensor.luce_lettura_henrik_power") | float(0) +
+          states("sensor.luce_lettura_antonella_power") | float(0) +
+          states("sensor.faretti_bagno_power") | float(0) +
+          states("sensor.soffitto_bagno_power") | float(0) +
+          states("sensor.lampada_corridoio_power") | float(0) +
+          states("sensor.strip_erica_power") | float(0) +
+          states("sensor.luce_abat_jour_erica_power") | float(0) +
+          states("sensor.corrimano_power") | float(0)) | round(2)}}
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        unique_id: 903ce724-e201-4ed8-b509-660a9349d75d
+  - sensor:
+      - name: TV power
+        state: "{{ states('sensor.tv_soggiorno_power')|int(0) + states('sensor.tv_cucina_power')|int(0) }}"
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        unique_id: abe8f427-ccde-4338-b171-795d06c8ce6e
+  - sensor:
+      - name: Condizionatori power
+        state: "{{ (states('sensor.condizionatore_cameretta_power')|float(0) + states('sensor.condizionatore_camera_power')|float(0)) | round(2) }}"
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        unique_id: 25de5c59-5a8b-40af-913a-d09c6eb3a7c9
+  ### TEMPORANEO: inserire il template giusto per prelevare il consumo di tutti i dispositivi relativi alla piscina ##
+  - sensor:
+      - name: Piscina power
+        state: 0
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        unique_id: 28b1e7eb-678e-467c-a601-535dc47e0f32
+  - sensor:
+      - name: PC power
+        state: "{{ states('sensor.shelly_plug_pc_power') | float(0) }}"
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        unique_id: cb4bdffa-af63-4309-9866-d30f696df4ee
+  - sensor:
+      - name: Altro power
+        state: >
+          {% if is_number(states('sensor.totale_power')) %}
+            {% set value = states('sensor.totale_power') | float - states('sensor.luci_power') | float(0) - states('sensor.lavanderia_power') | float(0) - states('sensor.cucina_power') | float(0) - 
+                          states('sensor.tapparelle_power') | float(0) - states('sensor.tv_power') | float(0) - states('sensor.condizionatori_power') | float(0) - states('sensor.piscina_power') | float(0) - states('sensor.pc_power') | float(0) %}
+            {% if value > 0 %}
+              {{ value }}
+            {% else %}
+              0
+            {% endif %}
+          {% else %}
+            None
+          {% endif %}
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        unique_id: 363e6525-04f3-4ca1-a0c5-ac6c2fc196e1

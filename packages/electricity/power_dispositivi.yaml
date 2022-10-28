@@ -1,0 +1,107 @@
+template:
+  # Sensori power singoli dispositivi, con valori rilevati una tantum e applicati se ON
+  - sensor:
+      - name: Luce abat jour Erica power
+        state: "{{ 3.5 if is_state('switch.abat_jour_erica', 'on') else 0 }}"
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        unique_id: 5f5f4ea8-22ee-45a5-94e2-cff63ae522e0
+  - sensor:
+      - name: Luce cucina power
+        state: "{{ 25 if is_state('light.luce_cucina','on') else 0 }}"
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        unique_id: 64a44452-4e1c-4bff-8eab-7a78027a9ddd
+  - sensor:
+      - name: Tavolo 1 power
+        state: "{{(state_attr('light.tavolo_1','brightness')|float(0) / 255)*10 | round(2)}}"
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        unique_id: 472c7424-4881-4834-8c0a-c8ad9019938d
+  - sensor:
+      - name: Tavolo 2 power
+        state: "{{(state_attr('light.tavolo_2','brightness')|float(0) / 255)*10 | round(2)}}"
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        unique_id: fd216e41-80f9-449d-a8b6-27a8dd66bb74
+  - sensor:
+      - name: Tavolo 3 power
+        state: "{{(state_attr('light.tavolo_3','brightness')|float(0) / 255)*10 | round(2)}}"
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        unique_id: 469a86ab-0bee-4188-b8ba-1e12dd4c1cf9
+  - sensor:
+      - name: Tavolo power
+        state: "{{ (states('sensor.tavolo_1_power') | float(0) + states('sensor.tavolo_2_power') | float(0) + states('sensor.tavolo_3_power') | float(0)) | round(2) }}"
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        unique_id: 7a8ac2b8-addf-46f8-a67c-0e6d5029ac84
+  - sensor:
+      - name: Faretto front power
+        state: "{{ 70 if is_state('light.faretto_front','on') else 0 }}"
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        unique_id: dea715db-c2e0-4f18-8761-1349c36692bd
+  - sensor:
+      - name: Luce tettoia power
+        state: "{{ 55 if is_state('light.luce_tettoia','on') else 0 }}"
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        unique_id: 4d3d99d7-6210-4957-b5d5-a3dfcc659d7e
+  - sensor:
+      - name: Luce camera power
+        state: "{{ 10 if is_state('light.luce_camera','on') else 0 }}"
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        unique_id: f2a92238-aa25-4f8b-9b18-fd8dd53e283c
+  - sensor:
+      - name: Luce letto power
+        state: "{{ 3 if is_state('light.luce_letto','on') else 0 }}"
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        unique_id: 13689fb5-1098-45b5-ab0b-bb5e9ed712f1
+  - sensor:
+      - name: Lampada corridoio power
+        state: >
+          {% if is_state('light.lampada_corridoio', 'off') %}
+            0
+          {% elif is_state_attr('light.lampada_corridoio', 'color_mode', 'color_temp') %}
+            {{(state_attr('light.lampada_corridoio', 'brightness') / 255 * 9) | round(2)}}
+          {% else %}
+            {{(state_attr('light.lampada_corridoio','rgbw_color')[0] | float(0) / 255 * 2 + state_attr('light.lampada_corridoio','rgbw_color')[1] | float(0) / 255 * 2 + state_attr('light.lampada_corridoio','rgbw_color')[2] | float(0) / 255 * 2 + state_attr('light.lampada_corridoio','rgbw_color')[3] | float(0) / 255 * 9) | round(2)}}
+          {% endif %}
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        unique_id: d78ed0b9-4be4-4254-a5e9-eaf0c94aceee
+  - sensor:
+      - name: TV Soggiorno power
+        state: "{{ 60 if is_state('media_player.tv_soggiorno','on') else 0 }}"
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        unique_id: 1ebd1931-4ceb-4c2c-92ff-d00708588cf4
+  - sensor:
+      - name: Lampada a terra power
+        state: "{{ 10 if is_state('light.lampada_a_terra','on') else 0 }}"
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        unique_id: 01508584-d79f-4763-b57d-7151c62fd976
+  - sensor:
+      - name: Corrimano power
+        state: "{{states('sensor.wled_corrimano_estimated_current') | float(0) / 1000 * 5 }}"
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        unique_id: 8b394837-1bcf-48b0-9ded-e58054250544

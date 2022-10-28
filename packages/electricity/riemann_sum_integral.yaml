@@ -1,0 +1,52 @@
+sensor:
+  # Energy calcolato con "Integration - Riemann sum integral" dove c'è solo power
+  - platform: integration
+    source: sensor.tostapane_power
+    name: Tostapane energy
+    unit_prefix: k
+    method: left
+    unique_id: ad931cb8-0eab-4628-aba0-d94d4ab752c2
+  - platform: integration
+    source: sensor.luci_power
+    name: Luci energy
+    unit_prefix: k
+    method: left
+    unique_id: f04bff67-de34-47f0-9225-d3f8deea22f7
+  - platform: integration
+    source: sensor.tv_power
+    name: TV energy
+    unit_prefix: k
+    method: trapezoidal
+    unique_id: a5e95a3b-8726-4ae9-8801-ff1bf8a16d37
+  - platform: integration
+    source: sensor.pompa_piscina_power
+    name: Piscina energy
+    unit_prefix: k
+    method: left
+    unique_id: 058563e8-b801-40e0-8cb9-9667a1c39554
+  # Energy persone PC
+  - platform: integration
+    source: sensor.pc_power_henrik
+    name: PC Henrik Energy
+    unit_prefix: k
+    method: trapezoidal
+    unique_id: c8255817-b982-4439-a710-700bb07d0172
+  - platform: integration
+    source: sensor.pc_power_erica
+    name: PC Erica Energy
+    unit_prefix: k
+    method: trapezoidal
+    unique_id: 500818cd-c4bc-444d-811a-43719c4f6394
+  # Energy "altro" basato su power (unico modo reliable per calcolare il consumo di quel che non è conteggiato negli altri energy)
+  - platform: integration
+    source: sensor.altro_power
+    name: Altro Energy
+    unit_prefix: k
+    method: trapezoidal
+    unique_id: 7b777245-cc1a-49f5-a727-00455dad5d89
+  - platform: integration
+    source: sensor.corrimano_power
+    name: Corrimano Energy
+    unit_prefix: k
+    method: left
+    unique_id: c4d9229b-4557-4d0d-a19a-3b22189a99b8

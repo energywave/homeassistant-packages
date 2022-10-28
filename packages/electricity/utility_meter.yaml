@@ -1,0 +1,553 @@
+utility_meter:
+  # Totale consumo
+  daily_energy:
+    source: sensor.totale_energy
+    name: Energia elettrica giorno
+    unique_id: 55d58892-a430-4722-b959-d9af8dd494f1
+    cycle: daily
+    tariffs:
+      - "F1"
+      - "F2"
+      - "F3"
+  monthly_energy:
+    source: sensor.totale_energy
+    name: Energia elettrica mese
+    unique_id: e8b923b4-dbdb-4d11-9afa-b4ae54030f79
+    cycle: monthly
+    tariffs:
+      - "F1"
+      - "F2"
+      - "F3"
+  yearly_energy:
+    source: sensor.totale_energy
+    name: Energia elettrica anno
+    unique_id: 38f16d3f-2007-48e8-b846-009a23baac13
+    cycle: yearly
+    tariffs:
+      - "F1"
+      - "F2"
+      - "F3"
+  # Lavanderia
+  lavanderia_daily_energy:
+    source: sensor.lavanderia_energy
+    name: Energia lavanderia giorno
+    unique_id: 43b887fa-ddf6-4afe-b48b-800543c4a6e9
+    cycle: daily
+    tariffs:
+      - "F1"
+      - "F2"
+      - "F3"
+  lavanderia_monthly_energy:
+    source: sensor.lavanderia_energy
+    name: Energia lavanderia mese
+    unique_id: 54bda72c-21c7-4391-a0bc-12f80fa13081
+    cycle: monthly
+    tariffs:
+      - "F1"
+      - "F2"
+      - "F3"
+  lavanderia_yearly_energy:
+    source: sensor.lavanderia_energy
+    name: Energia lavanderia anno
+    unique_id: 6bf0a7c6-8144-4ab4-ac08-4af399adf005
+    cycle: yearly
+    tariffs:
+      - "F1"
+      - "F2"
+      - "F3"
+  # Tapparelle
+  tapparelle_daily_energy:
+    source: sensor.tapparelle_energy
+    name: Energia tapparelle giorno
+    unique_id: 321c34d8-7065-4d64-91e8-0dd2b7b0f138
+    cycle: daily
+    tariffs:
+      - "F1"
+      - "F2"
+      - "F3"
+  tapparelle_monthly_energy:
+    source: sensor.tapparelle_energy
+    name: Energia tapparelle mese
+    unique_id: c7c4f027-3ee3-499c-afc1-602e5f86339c
+    cycle: monthly
+    tariffs:
+      - "F1"
+      - "F2"
+      - "F3"
+  tapparelle_yearly_energy:
+    source: sensor.tapparelle_energy
+    name: Energia tapparelle anno
+    unique_id: 362cf41e-1271-4cab-9415-f67fee96ef10
+    cycle: yearly
+    tariffs:
+      - "F1"
+      - "F2"
+      - "F3"
+  # Cucina
+  cucina_daily_energy:
+    source: sensor.cucina_energy
+    name: Energia cucina giorno
+    unique_id: e07251ab-173f-49ad-8310-6d6d31fbf18b
+    cycle: daily
+    tariffs:
+      - "F1"
+      - "F2"
+      - "F3"
+  cucina_monthly_energy:
+    source: sensor.cucina_energy
+    name: Energia cucina mese
+    unique_id: fab0a5b8-d2b6-4d85-a3e7-d7dc2d802afe
+    cycle: monthly
+    tariffs:
+      - "F1"
+      - "F2"
+      - "F3"
+  cucina_yearly_energy:
+    source: sensor.cucina_energy
+    name: Energia cucina anno
+    unique_id: 1f3e519e-6c86-498b-9ea7-5a34925e2bff
+    cycle: yearly
+    tariffs:
+      - "F1"
+      - "F2"
+      - "F3"
+  # Luci
+  luci_daily_energy:
+    source: sensor.luci_energy
+    name: Energia luci giorno
+    unique_id: 84930dc7-e46f-45a4-bee8-9e80473fd320
+    cycle: daily
+    tariffs:
+      - "F1"
+      - "F2"
+      - "F3"
+  luci_monthly_energy:
+    source: sensor.luci_energy
+    name: Energia luci mese
+    unique_id: 5d99c4d8-0420-4e77-bf96-b2580f9b419a
+    cycle: monthly
+    tariffs:
+      - "F1"
+      - "F2"
+      - "F3"
+  luci_yearly_energy:
+    source: sensor.luci_energy
+    name: Energia luci anno
+    unique_id: 018d4e24-189f-4b27-8edd-88007b6b4ea7
+    cycle: yearly
+    tariffs:
+      - "F1"
+      - "F2"
+      - "F3"
+  # TV
+  tv_daily_energy:
+    source: sensor.tv_energy
+    name: Energia TV giorno
+    unique_id: 66676552-dff4-446c-8dfe-4aacbcdbfaa4
+    cycle: daily
+    tariffs:
+      - "F1"
+      - "F2"
+      - "F3"
+  tv_monthly_energy:
+    source: sensor.tv_energy
+    name: Energia TV mese
+    unique_id: e16dd56c-085f-468e-918d-96db026eef28
+    cycle: monthly
+    tariffs:
+      - "F1"
+      - "F2"
+      - "F3"
+  tv_yearly_energy:
+    source: sensor.tv_energy
+    name: Energia TV anno
+    unique_id: 07c2c230-62a0-4cba-8e24-4561b389e9bd
+    cycle: yearly
+    tariffs:
+      - "F1"
+      - "F2"
+      - "F3"
+  # Piscina
+  piscina_daily_energy:
+    source: sensor.piscina_energy
+    name: Energia piscina giorno
+    unique_id: 4dca6768-ff9a-47a6-be2d-6b223e44d490
+    cycle: daily
+    tariffs:
+      - "F1"
+      - "F2"
+      - "F3"
+  piscina_monthly_energy:
+    source: sensor.piscina_energy
+    name: Energia piscina mese
+    unique_id: 174fec4d-0074-4688-85c5-c15ca142337c
+    cycle: monthly
+    tariffs:
+      - "F1"
+      - "F2"
+      - "F3"
+  piscina_yearly_energy:
+    source: sensor.piscina_energy
+    name: Energia piscina anno
+    unique_id: 548c4207-a24b-4ded-9b4d-a4f06473cd75
+    cycle: yearly
+    tariffs:
+      - "F1"
+      - "F2"
+      - "F3"
+  # Condizionatori
+  condizionatori_daily_energy:
+    source: sensor.condizionatori_energy
+    name: Energia condizionatori giorno
+    unique_id: 7e627e9b-e7d2-4307-97ea-1a5a0c96b38e
+    cycle: daily
+    tariffs:
+      - "F1"
+      - "F2"
+      - "F3"
+  condizionatori_monthly_energy:
+    source: sensor.condizionatori_energy
+    name: Energia condizionatori mese
+    unique_id: aaf0e8fc-c5bd-483a-8c67-7bdcd0c48bea
+    cycle: monthly
+    tariffs:
+      - "F1"
+      - "F2"
+      - "F3"
+  condizionatori_yearly_energy:
+    source: sensor.condizionatori_energy
+    name: Energia condizionatori anno
+    unique_id: fe051aab-469a-474f-9c7b-4a29c7ee6147
+    cycle: yearly
+    tariffs:
+      - "F1"
+      - "F2"
+      - "F3"
+  # PC
+  pc_daily_energy:
+    source: sensor.condizionatori_energy
+    name: Energia PC giorno
+    unique_id: 9cdb50c1-34db-4edf-84de-9d1bf0d1b234
+    cycle: daily
+    tariffs:
+      - "F1"
+      - "F2"
+      - "F3"
+  pc_monthly_energy:
+    source: sensor.condizionatori_energy
+    name: Energia PC mese
+    unique_id: 65145f1b-e320-4635-a2d4-de626c6571ee
+    cycle: monthly
+    tariffs:
+      - "F1"
+      - "F2"
+      - "F3"
+  pc_yearly_energy:
+    source: sensor.condizionatori_energy
+    name: Energia PC anno
+    unique_id: 7870b260-6774-4bd7-8824-c5506d32c880
+    cycle: yearly
+    tariffs:
+      - "F1"
+      - "F2"
+      - "F3"
+  # Altro
+  altro_daily_energy:
+    source: sensor.altro_energy
+    name: Energia altro giorno
+    unique_id: 081b8dee-075e-43d9-a01e-e96145ff4409
+    cycle: daily
+    tariffs:
+      - "F1"
+      - "F2"
+      - "F3"
+  altro_monthly_energy:
+    source: sensor.altro_energy
+    name: Energia altro mese
+    unique_id: 440a2aa0-805d-49fe-b7df-bd76da2bb350
+    cycle: monthly
+    tariffs:
+      - "F1"
+      - "F2"
+      - "F3"
+  altro_yearly_energy:
+    source: sensor.altro_energy
+    name: Energia altro anno
+    unique_id: b65a130e-e848-4c63-b99e-f7baf7d1d52a
+    cycle: yearly
+    tariffs:
+      - "F1"
+      - "F2"
+      - "F3"
+
+  # PC/UTENTE
+  pc_henrik_daily_energy:
+    source: sensor.pc_henrik_energy
+    name: Energia PC Henrik giorno
+    unique_id: 452de4ad-7727-46bd-b6c6-a465ee0aedb1
+    cycle: daily
+  pc_henrik_monthly_energy:
+    source: sensor.pc_henrik_energy
+    name: Energia PC Henrik mese
+    unique_id: 557917ca-4509-4492-b236-c7bd8c8337ec
+    cycle: monthly
+  pc_henrik_yearly_energy:
+    source: sensor.pc_henrik_energy
+    name: Energia PC Henrik anno
+    unique_id: 2b1e8adf-1728-4ae0-96aa-ece34433cabc
+    cycle: yearly
+  pc_erica_daily_energy:
+    source: sensor.pc_erica_energy
+    name: Energia PC Erica giorno
+    unique_id: 8e81cb10-792b-4d9b-9135-1515f58d0d14
+    cycle: daily
+  pc_erica_monthly_energy:
+    source: sensor.pc_erica_energy
+    name: Energia PC Erica mese
+    unique_id: 46c836c3-9c4f-4e0e-8d85-d76d704545e6
+    cycle: monthly
+  pc_erica_yearly_energy:
+    source: sensor.pc_erica_energy
+    name: Energia PC Erica anno
+    unique_id: 99707af7-c422-465f-b7b6-3a4c1248af2b
+    cycle: yearly
+
+binary_sensor:
+  - platform: workday
+    country: IT
+    workdays: [mon, tue, wed, thu, fri]
+    excludes: [sat, sun, holiday]
+
+automation:
+  # Passaggio a F3
+  - alias: "energy_f3"
+    description: "Passaggio alla Fascia 3"
+    trigger:
+      - platform: time
+        at: "23:00:00"
+    condition:
+      - condition: state
+        entity_id: "binary_sensor.workday_sensor"
+        state: "on"
+    action:
+      - service: select.select_option
+        target:
+          entity_id:
+            - select.daily_energy
+            - select.monthly_energy
+            - select.yearly_energy
+            - select.lavanderia_daily_energy
+            - select.lavanderia_monthly_energy
+            - select.lavanderia_yearly_energy
+            - select.tapparelle_daily_energy
+            - select.tapparelle_monthly_energy
+            - select.tapparelle_yearly_energy
+            - select.cucina_daily_energy
+            - select.cucina_monthly_energy
+            - select.cucina_yearly_energy
+            - select.luci_daily_energy
+            - select.luci_monthly_energy
+            - select.luci_yearly_energy
+            - select.condizionatori_daily_energy
+            - select.condizionatori_monthly_energy
+            - select.condizionatori_yearly_energy
+            - select.piscina_daily_energy
+            - select.piscina_monthly_energy
+            - select.piscina_yearly_energy
+            - select.tv_daily_energy
+            - select.tv_monthly_energy
+            - select.tv_yearly_energy
+            - select.pc_daily_energy
+            - select.pc_monthly_energy
+            - select.pc_yearly_energy
+            - select.altro_daily_energy
+            - select.altro_monthly_energy
+            - select.altro_yearly_energy
+        data:
+          option: "F3"
+
+  - alias: "energy_f3_sat"
+    description: "Passaggio alla Fascia 3 Sabato"
+    trigger:
+      - platform: time
+        at: "23:00:00"
+    condition:
+      - condition: time
+        weekday: [sat]
+    action:
+      - service: select.select_option
+        target:
+          entity_id:
+            - select.daily_energy
+            - select.monthly_energy
+            - select.yearly_energy
+            - select.lavanderia_daily_energy
+            - select.lavanderia_monthly_energy
+            - select.lavanderia_yearly_energy
+            - select.tapparelle_daily_energy
+            - select.tapparelle_monthly_energy
+            - select.tapparelle_yearly_energy
+            - select.cucina_daily_energy
+            - select.cucina_monthly_energy
+            - select.cucina_yearly_energy
+            - select.luci_daily_energy
+            - select.luci_monthly_energy
+            - select.luci_yearly_energy
+            - select.condizionatori_daily_energy
+            - select.condizionatori_monthly_energy
+            - select.condizionatori_yearly_energy
+            - select.piscina_daily_energy
+            - select.piscina_monthly_energy
+            - select.piscina_yearly_energy
+            - select.tv_daily_energy
+            - select.tv_monthly_energy
+            - select.tv_yearly_energy
+            - select.pc_daily_energy
+            - select.pc_monthly_energy
+            - select.pc_yearly_energy
+            - select.altro_daily_energy
+            - select.altro_monthly_energy
+            - select.altro_yearly_energy
+        data:
+          option: "F3"
+
+  # Passaggio a F2
+  - alias: "energy_f2"
+    description: "Passaggio alla Fascia 2"
+    trigger:
+      - platform: time
+        at: "07:00:00"
+      - platform: time
+        at: "19:00:00"
+    condition:
+      - condition: state
+        entity_id: "binary_sensor.workday_sensor"
+        state: "on"
+    action:
+      - service: select.select_option
+        target:
+          entity_id:
+            - select.daily_energy
+            - select.monthly_energy
+            - select.yearly_energy
+            - select.lavanderia_daily_energy
+            - select.lavanderia_monthly_energy
+            - select.lavanderia_yearly_energy
+            - select.tapparelle_daily_energy
+            - select.tapparelle_monthly_energy
+            - select.tapparelle_yearly_energy
+            - select.cucina_daily_energy
+            - select.cucina_monthly_energy
+            - select.cucina_yearly_energy
+            - select.luci_daily_energy
+            - select.luci_monthly_energy
+            - select.luci_yearly_energy
+            - select.condizionatori_daily_energy
+            - select.condizionatori_monthly_energy
+            - select.condizionatori_yearly_energy
+            - select.piscina_daily_energy
+            - select.piscina_monthly_energy
+            - select.piscina_yearly_energy
+            - select.tv_daily_energy
+            - select.tv_monthly_energy
+            - select.tv_yearly_energy
+            - select.pc_daily_energy
+            - select.pc_monthly_energy
+            - select.pc_yearly_energy
+            - select.altro_daily_energy
+            - select.altro_monthly_energy
+            - select.altro_yearly_energy
+        data:
+          option: "F2"
+
+  - alias: "energy_f2_sat"
+    description: "Passaggio alla Fascia 2 Sabato"
+    trigger:
+      - platform: time
+        at: "07:00:00"
+    condition:
+      - condition: time
+        weekday: [sat]
+    action:
+      - service: select.select_option
+        target:
+          entity_id:
+            - select.daily_energy
+            - select.monthly_energy
+            - select.yearly_energy
+            - select.lavanderia_daily_energy
+            - select.lavanderia_monthly_energy
+            - select.lavanderia_yearly_energy
+            - select.tapparelle_daily_energy
+            - select.tapparelle_monthly_energy
+            - select.tapparelle_yearly_energy
+            - select.cucina_daily_energy
+            - select.cucina_monthly_energy
+            - select.cucina_yearly_energy
+            - select.luci_daily_energy
+            - select.luci_monthly_energy
+            - select.luci_yearly_energy
+            - select.condizionatori_daily_energy
+            - select.condizionatori_monthly_energy
+            - select.condizionatori_yearly_energy
+            - select.piscina_daily_energy
+            - select.piscina_monthly_energy
+            - select.piscina_yearly_energy
+            - select.tv_daily_energy
+            - select.tv_monthly_energy
+            - select.tv_yearly_energy
+            - select.pc_daily_energy
+            - select.pc_monthly_energy
+            - select.pc_yearly_energy
+            - select.altro_daily_energy
+            - select.altro_monthly_energy
+            - select.altro_yearly_energy
+        data:
+          option: "F2"
+
+  # Passaggio a F1
+  - alias: "energy_f1"
+    description: "Passaggio alla Fascia 1"
+    trigger:
+      - platform: time
+        at: "08:00:00"
+    condition:
+      - condition: state
+        entity_id: "binary_sensor.workday_sensor"
+        state: "on"
+    action:
+      - service: select.select_option
+        target:
+          entity_id:
+            - select.daily_energy
+            - select.monthly_energy
+            - select.yearly_energy
+            - select.lavanderia_daily_energy
+            - select.lavanderia_monthly_energy
+            - select.lavanderia_yearly_energy
+            - select.tapparelle_daily_energy
+            - select.tapparelle_monthly_energy
+            - select.tapparelle_yearly_energy
+            - select.cucina_daily_energy
+            - select.cucina_monthly_energy
+            - select.cucina_yearly_energy
+            - select.luci_daily_energy
+            - select.luci_monthly_energy
+            - select.luci_yearly_energy
+            - select.condizionatori_daily_energy
+            - select.condizionatori_monthly_energy
+            - select.condizionatori_yearly_energy
+            - select.piscina_daily_energy
+            - select.piscina_monthly_energy
+            - select.piscina_yearly_energy
+            - select.tv_daily_energy
+            - select.tv_monthly_energy
+            - select.tv_yearly_energy
+            - select.pc_daily_energy
+            - select.pc_monthly_energy
+            - select.pc_yearly_energy
+            - select.altro_daily_energy
+            - select.altro_monthly_energy
+            - select.altro_yearly_energy
+        data:
+          option: "F1"

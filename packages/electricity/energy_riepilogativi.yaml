@@ -1,0 +1,101 @@
+template:
+  # Sensori energy riepilogativi
+  ### TEMPORANEO: creare il sensore energy giusto quando aggiungerò nuovamente la presa comandata ##
+  - sensor:
+      - name: Piscina energy
+        state: 0
+        unit_of_measurement: kWh
+        device_class: energy
+        state_class: total_increasing
+        unique_id: 37646659-0e53-4937-acf7-1afec25c2371
+  - sensor:
+      - name: PC energy
+        state: >
+          {% if is_number(states('sensor.shelly_plug_pc_energy')) %}
+            {{ states('sensor.shelly_plug_pc_energy') | float }}
+          {% else %}
+            None
+          {% endif %}
+        unit_of_measurement: kWh
+        device_class: energy
+        state_class: total_increasing
+        unique_id: d48b4d02-7eab-4c44-a824-dd4006ac2989
+  - sensor:
+      - name: Condizionatori energy
+        state: >
+          {% if is_number(states('sensor.condizionatore_cameretta_energy')) and is_number(states('sensor.condizionatore_camera_energy')) %}
+            {{ states('sensor.condizionatore_cameretta_energy') | float + states('sensor.condizionatore_camera_energy') | float }}
+          {% else %}
+            None
+          {% endif %}
+        unit_of_measurement: kWh
+        device_class: energy
+        state_class: total_increasing
+        unique_id: 20a7bb92-6972-4f54-8b7d-b239cfc0eca3
+  - sensor:
+      - name: Lavanderia energy
+        state: 0
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        unique_id: a606529c-9796-40f2-a95a-66e21966babf
+  - sensor:
+      - name: Tapparelle energy
+        state: >
+          {% if is_number(states("sensor.tapparella_soggiorno_energy")) and 
+            is_number(states("sensor.tapparella_finestra_cucina_energy")) and 
+            is_number(states("sensor.tapparella_portafinestra_cucina_energy")) and 
+            is_number(states("sensor.tapparella_corridoio_energy")) and 
+            is_number(states("sensor.tapparella_bagno_energy")) and 
+            is_number(states("sensor.tapparella_scale_energy")) %}
+            {{ states("sensor.tapparella_soggiorno_energy") | float + 
+              states("sensor.tapparella_finestra_cucina_energy") | float + 
+              states("sensor.tapparella_portafinestra_cucina_energy") | float + 
+              states("sensor.tapparella_corridoio_energy") | float + 
+              states("sensor.tapparella_bagno_energy") | float +
+              states("sensor.tapparella_scale_energy") | float }}
+          {% else %}
+            None
+          {% endif %}
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        unique_id: 56b7188b-680a-4e27-8d85-7644ae782d44
+  - sensor:
+      - name: Cucina energy
+        state: >
+          {% if is_number(states('sensor.cappa_energy')) %}
+            {{ states('sensor.cappa_energy') | float }}
+          {% else %}
+            None
+          {% endif %}
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        unique_id: a3746a06-829a-477c-b20c-4b503b2572ed
+  # - sensor:
+  #     - name: Altro energy
+  #       state: >
+  #         {% if is_number(states('sensor.totale_energy')) and
+  #           is_number(states('sensor.luci_energy')) and 
+  #           is_number(states('sensor.lavanderia_energy')) and 
+  #           is_number(states('sensor.cucina_energy')) and
+  #           is_number(states('sensor.tapparelle_energy')) and
+  #           is_number(states('sensor.tv_energy')) and
+  #           is_number(states('sensor.condizionatori_energy')) and
+  #           is_number(states('sensor.piscina_energy')) %}
+  #           {{ states('sensor.totale_energy') | float - 
+  #             states('sensor.luci_energy') | float -
+  #             states('sensor.lavanderia_energy') | float - 
+  #             states('sensor.cucina_energy') | float - 
+  #             states('sensor.tapparelle_energy') | float - 
+  #             states('sensor.tv_energy') | float - 
+  #             states('sensor.condizionatori_energy') | float - 
+  #             states('sensor.piscina_energy') | float }}
+  #         {% else %}
+  #           None
+  #         {% endif %}
+  #       unit_of_measurement: "kWh"
+  #       device_class: energy
+  #       state_class: total_increasing
+  #       unique_id: 10b0c23c-91c6-4f93-8b58-c7fea5ae0327

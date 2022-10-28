@@ -1,0 +1,282 @@
+template:
+  # Sensori energy giornalieri/mensili/annuali calcolati sommando utility_meter
+  # Totali
+  - sensor:
+      - name: Daily energy
+        state: "{{(states('sensor.daily_energy_f1')|float(0) + states('sensor.daily_energy_f2')|float(0) + states('sensor.daily_energy_f3')|float(0)) | round(2)}}"
+        attributes:
+          last_period: "{{(state_attr('sensor.daily_energy_f1', 'last_period')|float(0) + state_attr('sensor.daily_energy_f2', 'last_period')|float(0) + state_attr('sensor.daily_energy_f3', 'last_period')|float(0)) | round(2)}}"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        unique_id: 3529e900-b903-4339-a1d0-b754842c23ba
+  - sensor:
+      - name: Monthly energy
+        state: "{{(states('sensor.monthly_energy_f1')|float(0) + states('sensor.monthly_energy_f2')|float(0) + states('sensor.monthly_energy_f3')|float(0)) | round(2)}}"
+        attributes:
+          last_period: "{{(state_attr('sensor.monthly_energy_f1', 'last_period')|float(0) + state_attr('sensor.monthly_energy_f2', 'last_period')|float(0) + state_attr('sensor.monthly_energy_f3', 'last_period')|float(0)) | round(2)}}"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        unique_id: 0596e652-9ee6-413f-b1ed-f5df2161a160
+  - sensor:
+      - name: Yearly energy
+        state: "{{(states('sensor.yearly_energy_f1')|float(0) + states('sensor.yearly_energy_f2')|float(0) + states('sensor.yeary_energy_f3')|float(0)) | round(2)}}"
+        attributes:
+          last_period: "{{(state_attr('sensor.yearly_energy_f1', 'last_period')|float(0) + state_attr('sensor.yearly_energy_f2', 'last_period')|float(0) + state_attr('sensor.yearly_energy_f3', 'last_period')|float(0)) | round(2)}}"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        unique_id: 6d79356a-0409-4dd4-b432-67432a30604a
+  # Lavanderia
+  - sensor:
+      - name: Lavanderia daily energy
+        state: "{{(states('sensor.lavanderia_daily_energy_f1')|float(0) + states('sensor.lavanderia_daily_energy_f2')|float(0) + states('sensor.lavanderia_daily_energy_f3')|float(0)) | round(2)}}"
+        attributes:
+          last_period: "{{(state_attr('sensor.lavanderia_daily_energy_f1', 'last_period')|float(0) + state_attr('sensor.lavanderia_daily_energy_f2', 'last_period')|float(0) + state_attr('sensor.lavanderia_daily_energy_f3', 'last_period')|float(0)) | round(2)}}"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        unique_id: fd9b5a97-0d57-4775-a631-5f293a39ba8d
+  - sensor:
+      - name: Lavanderia monthly energy
+        state: "{{(states('sensor.lavanderia_monthly_energy_f1')|float(0) + states('sensor.lavanderia_monthly_energy_f2')|float(0) + states('sensor.lavanderia_monthly_energy_f3')|float(0)) | round(2)}}"
+        attributes:
+          last_period: "{{(state_attr('sensor.lavanderia_monthly_energy_f1', 'last_period')|float(0) + state_attr('sensor.lavanderia_monthly_energy_f2', 'last_period')|float(0) + state_attr('sensor.lavanderia_monthly_energy_f3', 'last_period')|float(0)) | round(2)}}"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        unique_id: b4d4a874-48d7-448a-a9ad-b5ae45615dae
+  - sensor:
+      - name: Lavanderia yearly energy
+        state: "{{(states('sensor.lavanderia_yearly_energy_f1')|float(0) + states('sensor.lavanderia_yearly_energy_f2')|float(0) + states('sensor.lavanderia_yearly_energy_f3')|float(0)) | round(2)}}"
+        attributes:
+          last_period: "{{(state_attr('sensor.lavanderia_yearly_energy_f1', 'last_period')|float(0) + state_attr('sensor.lavanderia_yearly_energy_f2', 'last_period')|float(0) + state_attr('sensor.lavanderia_yearly_energy_f3', 'last_period')|float(0)) | round(2)}}"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        unique_id: 8bc75595-45f3-4965-87e8-ad059edbf5f7
+  # Tapparelle
+  - sensor:
+      - name: Tapparelle daily energy
+        state: "{{(states('sensor.tapparelle_daily_energy_f1')|float(0) + states('sensor.tapparelle_daily_energy_f2')|float(0) + states('sensor.tapparelle_daily_energy_f3')|float(0)) | round(2)}}"
+        attributes:
+          last_period: "{{(state_attr('sensor.tapparelle_daily_energy_f1', 'last_period')|float(0) + state_attr('sensor.tapparelle_daily_energy_f2', 'last_period')|float(0) + state_attr('sensor.tapparelle_daily_energy_f3', 'last_period')|float(0)) | round(2)}}"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        unique_id: f7571203-7346-487f-804f-c46bf0da4b99
+  - sensor:
+      - name: Tapparelle monthly energy
+        state: "{{(states('sensor.tapparelle_monthly_energy_f1')|float(0) + states('sensor.tapparelle_monthly_energy_f2')|float(0) + states('sensor.tapparelle_monthly_energy_f3')|float(0)) | round(2)}}"
+        attributes:
+          last_period: "{{(state_attr('sensor.tapparelle_monthly_energy_f1', 'last_period')|float(0) + state_attr('sensor.tapparelle_monthly_energy_f2', 'last_period')|float(0) + state_attr('sensor.tapparelle_monthly_energy_f3', 'last_period')|float(0)) | round(2)}}"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        unique_id: f25116df-948e-4234-8668-fb9cfeaec599
+  - sensor:
+      - name: Tapparelle yearly energy
+        state: "{{(states('sensor.tapparelle_yearly_energy_f1')|float(0) + states('sensor.tapparelle_yearly_energy_f2')|float(0) + states('sensor.tapparelle_yearly_energy_f3')|float(0)) | round(2)}}"
+        attributes:
+          last_period: "{{(state_attr('sensor.tapparelle_yearly_energy_f1', 'last_period')|float(0) + state_attr('sensor.tapparelle_yearly_energy_f2', 'last_period')|float(0) + state_attr('sensor.tapparelle_yearly_energy_f3', 'last_period')|float(0)) | round(2)}}"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        unique_id: aade8123-2e76-4535-9058-87a1a70177b7
+  # Cucina
+  - sensor:
+      - name: Cucina daily energy
+        state: "{{(states('sensor.cucina_daily_energy_f1')|float(0) + states('sensor.cucina_daily_energy_f2')|float(0) + states('sensor.cucina_daily_energy_f3')|float(0)) | round(2)}}"
+        attributes:
+          last_period: "{{(state_attr('sensor.cucina_daily_energy_f1', 'last_period')|float(0) + state_attr('sensor.cucina_daily_energy_f2', 'last_period')|float(0) + state_attr('sensor.cucina_daily_energy_f3', 'last_period')|float(0)) | round(2)}}"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        unique_id: 36e87758-8514-4364-ba42-a8fff29cd6d6
+  - sensor:
+      - name: Cucina monthly energy
+        state: "{{(states('sensor.cucina_monthly_energy_f1')|float(0) + states('sensor.cucina_monthly_energy_f2')|float(0) + states('sensor.cucina_monthly_energy_f3')|float(0)) | round(2)}}"
+        attributes:
+          last_period: "{{(state_attr('sensor.cucina_monthly_energy_f1', 'last_period')|float(0) + state_attr('sensor.cucina_monthly_energy_f2', 'last_period')|float(0) + state_attr('sensor.cucina_monthly_energy_f3', 'last_period')|float(0)) | round(2)}}"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        unique_id: 46db0458-67cd-4eca-a681-5b33ac4e70a8
+  - sensor:
+      - name: Cucina yearly energy
+        state: "{{(states('sensor.cucina_yearly_energy_f1')|float(0) + states('sensor.cucina_yearly_energy_f2')|float(0) + states('sensor.cucina_yearly_energy_f3')|float(0)) | round(2)}}"
+        attributes:
+          last_period: "{{(state_attr('sensor.cucina_yearly_energy_f1', 'last_period')|float(0) + state_attr('sensor.cucina_yearly_energy_f2', 'last_period')|float(0) + state_attr('sensor.cucina_yearly_energy_f3', 'last_period')|float(0)) | round(2)}}"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        unique_id: e0dc1caf-b3f2-493c-99cf-d64d57cd6c29
+  # Luci
+  - sensor:
+      - name: Luci daily energy
+        state: "{{(states('sensor.luci_daily_energy_f1')|float(0) + states('sensor.luci_daily_energy_f2')|float(0) + states('sensor.luci_daily_energy_f3')|float(0)) | round(2)}}"
+        attributes:
+          last_period: "{{(state_attr('sensor.luci_daily_energy_f1', 'last_period')|float(0) + state_attr('sensor.luci_daily_energy_f2', 'last_period')|float(0) + state_attr('sensor.luci_daily_energy_f3', 'last_period')|float(0)) | round(2)}}"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        unique_id: 7364ca0d-bdb7-462e-99f5-b5877717a46a
+  - sensor:
+      - name: Luci monthly energy
+        state: "{{(states('sensor.luci_monthly_energy_f1')|float(0) + states('sensor.luci_monthly_energy_f2')|float(0) + states('sensor.luci_monthly_energy_f3')|float(0)) | round(2)}}"
+        attributes:
+          last_period: "{{(state_attr('sensor.luci_monthly_energy_f1', 'last_period')|float(0) + state_attr('sensor.luci_monthly_energy_f2', 'last_period')|float(0) + state_attr('sensor.luci_monthly_energy_f3', 'last_period')|float(0)) | round(2)}}"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        unique_id: 66eda646-897a-477c-8fdc-cf28f2bbffee
+  - sensor:
+      - name: Luci yearly energy
+        state: "{{(states('sensor.luci_yearly_energy_f1')|float(0) + states('sensor.luci_yearly_energy_f2')|float(0) + states('sensor.luci_yearly_energy_f3')|float(0)) | round(2)}}"
+        attributes:
+          last_period: "{{(state_attr('sensor.luci_yearly_energy_f1', 'last_period')|float(0) + state_attr('sensor.luci_yearly_energy_f2', 'last_period')|float(0) + state_attr('sensor.luci_yearly_energy_f3', 'last_period')|float(0)) | round(2)}}"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        unique_id: 52246c49-7bfa-48af-ba79-d218a71ce70c
+  # TV
+  - sensor:
+      - name: TV daily energy
+        state: "{{(states('sensor.tv_daily_energy_f1')|float(0) + states('sensor.tv_daily_energy_f2')|float(0) + states('sensor.tv_daily_energy_f3')|float(0)) | round(2)}}"
+        attributes:
+          last_period: "{{(state_attr('sensor.tv_daily_energy_f1', 'last_period')|float(0) + state_attr('sensor.tv_daily_energy_f2', 'last_period')|float(0) + state_attr('sensor.tv_daily_energy_f3', 'last_period')|float(0)) | round(2)}}"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        unique_id: 55d715c0-d5b8-40c2-8e23-f75a12d474b3
+  - sensor:
+      - name: TV monthly energy
+        state: "{{(states('sensor.tv_monthly_energy_f1')|float(0) + states('sensor.tv_monthly_energy_f2')|float(0) + states('sensor.tv_monthly_energy_f3')|float(0)) | round(2)}}"
+        attributes:
+          last_period: "{{(state_attr('sensor.tv_monthly_energy_f1', 'last_period')|float(0) + state_attr('sensor.tv_monthly_energy_f2', 'last_period')|float(0) + state_attr('sensor.tv_monthly_energy_f3', 'last_period')|float(0)) | round(2)}}"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        unique_id: ad4b587c-5c29-4233-b416-19df28ed8946
+  - sensor:
+      - name: TV yearly energy
+        state: "{{(states('sensor.tv_yearly_energy_f1')|float(0) + states('sensor.tv_yearly_energy_f2')|float(0) + states('sensor.tv_yearly_energy_f3')|float(0)) | round(2)}}"
+        attributes:
+          last_period: "{{(state_attr('sensor.tv_yearly_energy_f1', 'last_period')|float(0) + state_attr('sensor.tv_yearly_energy_f2', 'last_period')|float(0) + state_attr('sensor.tv_yearly_energy_f3', 'last_period')|float(0)) | round(2)}}"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        unique_id: ecc0c825-132c-49ac-a761-f7efb2e9bcd1
+  # Piscina
+  - sensor:
+      - name: Piscina daily energy
+        state: "{{(states('sensor.piscina_daily_energy_f1')|float(0) + states('sensor.piscina_daily_energy_f2')|float(0) + states('sensor.piscina_daily_energy_f3')|float(0)) | round(2)}}"
+        attributes:
+          last_period: "{{(state_attr('sensor.piscina_daily_energy_f1', 'last_period')|float(0) + state_attr('sensor.piscina_daily_energy_f2', 'last_period')|float(0) + state_attr('sensor.piscina_daily_energy_f3', 'last_period')|float(0)) | round(2)}}"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        unique_id: 96b2698d-29ff-4e26-9063-67a1f2c841c1
+  - sensor:
+      - name: Piscina monthly energy
+        state: "{{(states('sensor.piscina_monthly_energy_f1')|float(0) + states('sensor.piscina_monthly_energy_f2')|float(0) + states('sensor.piscina_monthly_energy_f3')|float(0)) | round(2)}}"
+        attributes:
+          last_period: "{{(state_attr('sensor.piscina_monthly_energy_f1', 'last_period')|float(0) + state_attr('sensor.piscina_monthly_energy_f2', 'last_period')|float(0) + state_attr('sensor.piscina_monthly_energy_f3', 'last_period')|float(0)) | round(2)}}"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        unique_id: 4d067d77-2adb-4b31-a3a9-1996e3a61c4d
+  - sensor:
+      - name: Piscina yearly energy
+        state: "{{(states('sensor.piscina_yearly_energy_f1')|float(0) + states('sensor.piscina_yearly_energy_f2')|float(0) + states('sensor.piscina_yearly_energy_f3')|float(0)) | round(2)}}"
+        attributes:
+          last_period: "{{(state_attr('sensor.piscina_yearly_energy_f1', 'last_period')|float(0) + state_attr('sensor.piscina_yearly_energy_f2', 'last_period')|float(0) + state_attr('sensor.piscina_yearly_energy_f3', 'last_period')|float(0)) | round(2)}}"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        unique_id: e03a130b-0c48-4181-bbb8-215e98e5cc93
+  # Condizionatori
+  - sensor:
+      - name: Condizionatori daily energy
+        state: "{{(states('sensor.condizionatori_daily_energy_f1')|float(0) + states('sensor.condizionatori_daily_energy_f2')|float(0) + states('sensor.condizionatori_daily_energy_f3')|float(0)) | round(2)}}"
+        attributes:
+          last_period: "{{(state_attr('sensor.condizionatori_daily_energy_f1', 'last_period')|float(0) + state_attr('sensor.condizionatori_daily_energy_f2', 'last_period')|float(0) + state_attr('sensor.condizionatori_daily_energy_f3', 'last_period')|float(0)) | round(2)}}"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        unique_id: 0db75195-4f80-4dc0-acba-226755bd17e9
+  - sensor:
+      - name: Condizionatori monthly energy
+        state: "{{(states('sensor.condizionatori_monthly_energy_f1')|float(0) + states('sensor.condizionatori_monthly_energy_f2')|float(0) + states('sensor.condizionatori_monthly_energy_f3')|float(0)) | round(2)}}"
+        attributes:
+          last_period: "{{(state_attr('sensor.condizionatori_monthly_energy_f1', 'last_period')|float(0) + state_attr('sensor.condizionatori_monthly_energy_f2', 'last_period')|float(0) + state_attr('sensor.condizionatori_monthly_energy_f3', 'last_period')|float(0)) | round(2)}}"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        unique_id: 05c3a047-a09b-4151-99a4-38727c808566
+  - sensor:
+      - name: Condizionatori yearly energy
+        state: "{{(states('sensor.condizionatori_yearly_energy_f1')|float(0) + states('sensor.condizionatori_yearly_energy_f2')|float(0) + states('sensor.condizionatori_yearly_energy_f3')|float(0)) | round(2)}}"
+        attributes:
+          last_period: "{{(state_attr('sensor.condizionatori_yearly_energy_f1', 'last_period')|float(0) + state_attr('sensor.condizionatori_yearly_energy_f2', 'last_period')|float(0) + state_attr('sensor.condizionatori_yearly_energy_f3', 'last_period')|float(0)) | round(2)}}"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        unique_id: 4b363901-82de-4b5b-ac0c-104e094406d9
+  # PC
+  - sensor:
+      - name: PC daily energy
+        state: "{{(states('sensor.pc_daily_energy_f1')|float(0) + states('sensor.pc_daily_energy_f2')|float(0) + states('sensor.pc_daily_energy_f3')|float(0)) | round(2)}}"
+        attributes:
+          last_period: "{{(state_attr('sensor.pc_daily_energy_f1', 'last_period')|float(0) + state_attr('sensor.pc_daily_energy_f2', 'last_period')|float(0) + state_attr('sensor.pc_daily_energy_f3', 'last_period')|float(0)) | round(2)}}"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        unique_id: 6dea093a-d45c-414a-b5ec-0cc47fa0ae4b
+  - sensor:
+      - name: PC monthly energy
+        state: "{{(states('sensor.pc_monthly_energy_f1')|float(0) + states('sensor.pc_monthly_energy_f2')|float(0) + states('sensor.pc_monthly_energy_f3')|float(0)) | round(2)}}"
+        attributes:
+          last_period: "{{(state_attr('sensor.pc_monthly_energy_f1', 'last_period')|float(0) + state_attr('sensor.pc_monthly_energy_f2', 'last_period')|float(0) + state_attr('sensor.pc_monthly_energy_f3', 'last_period')|float(0)) | round(2)}}"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        unique_id: 3d2e0fb7-211c-4a89-b3b8-256219bb5e17
+  - sensor:
+      - name: PC yearly energy
+        state: "{{(states('sensor.pc_yearly_energy_f1')|float(0) + states('sensor.pc_yearly_energy_f2')|float(0) + states('sensor.pc_yearly_energy_f3')|float(0)) | round(2)}}"
+        attributes:
+          last_period: "{{(state_attr('sensor.pc_yearly_energy_f1', 'last_period')|float(0) + state_attr('sensor.pc_yearly_energy_f2', 'last_period')|float(0) + state_attr('sensor.pc_yearly_energy_f3', 'last_period')|float(0)) | round(2)}}"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        unique_id: e3904d4c-46c8-44b4-a67f-ca94d56b8219
+  # Altro
+  - sensor:
+      - name: Altro daily energy
+        state: "{{(states('sensor.altro_daily_energy_f1')|float(0) + states('sensor.altro_daily_energy_f2')|float(0) + states('sensor.altro_daily_energy_f3')|float(0)) | round(2)}}"
+        attributes:
+          last_period: "{{(state_attr('sensor.altro_daily_energy_f1', 'last_period')|float(0) + state_attr('sensor.altro_daily_energy_f2', 'last_period')|float(0) + state_attr('sensor.altro_daily_energy_f3', 'last_period')|float(0)) | round(2)}}"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        unique_id: f8f3f1c8-ddcd-4a8b-8a97-040262340ba9
+  - sensor:
+      - name: Altro monthly energy
+        state: "{{(states('sensor.altro_monthly_energy_f1')|float(0) + states('sensor.altro_monthly_energy_f2')|float(0) + states('sensor.altro_monthly_energy_f3')|float(0)) | round(2)}}"
+        attributes:
+          last_period: "{{(state_attr('sensor.altro_monthly_energy_f1', 'last_period')|float(0) + state_attr('sensor.altro_monthly_energy_f2', 'last_period')|float(0) + state_attr('sensor.altro_monthly_energy_f3', 'last_period')|float(0)) | round(2)}}"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        unique_id: 49167468-8d92-4106-999d-4c26a5e8e462
+  - sensor:
+      - name: Altro yearly energy
+        state: "{{(states('sensor.altro_yearly_energy_f1')|float(0) + states('sensor.altro_yearly_energy_f2')|float(0) + states('sensor.altro_yearly_energy_f3')|float(0)) | round(2)}}"
+        attributes:
+          last_period: "{{(state_attr('sensor.altro_yearly_energy_f1', 'last_period')|float(0) + state_attr('sensor.altro_yearly_energy_f2', 'last_period')|float(0) + state_attr('sensor.altro_yearly_energy_f3', 'last_period')|float(0)) | round(2)}}"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        unique_id: 88dc4e11-21da-4228-a8d2-cec878cb68d0

@@ -1,0 +1,25 @@
+template:
+  - sensor:
+      - name: PC Power Henrik
+        state: >
+          {% if states('sensor.hshome_current_username') | default('') == 'Henrik' %}
+            {{ states('sensor.pc_power') | float(0) }}
+          {% else %}
+            None
+          {% endif %}
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        unique_id: f753a00e-ab57-4c47-9f8b-0c36c1a6b239
+  - sensor:
+      - name: PC Power Erica
+        state: >
+          {% if states('sensor.hshome_current_username') | default('') == 'sozzi' %}
+            {{ states('sensor.pc_power') | float(0) }}
+          {% else %}
+            None
+          {% endif %}
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        unique_id: 1f49f739-ba65-4c5a-a4fe-90b4a7bd0058
