@@ -1,0 +1,13 @@
+type: entities
+entities:
+  - entity: input_boolean.audio_fx_auto
+    name: Attivazione automatica
+    secondary_info: none
+  - entity: input_select.audio_fx
+    name: Tema attivo
+  - entity: input_number.audio_fx_improbability
+    name: Frequenza minuti media
+  - entity: input_number.audio_fx_volume
+title: Effetti sonori
+show_header_toggle: false
+state_color: false
