@@ -1,0 +1,150 @@
+input_boolean:
+  audio_fx_auto:
+    name: Effetti sonori automatici
+    icon: mdi:volume-high
+
+input_select:
+  audio_fx:
+    name: Effetti sonori Alexa
+    options:
+      - "No FX"
+      - "Halloween"
+      - "Christmas"
+      - "Birthday"
+    icon: mdi:volume-high
+
+input_number:
+  audio_fx_improbability:
+    name: Improbabilità effetti audio
+    min: 1
+    max: 10
+    step: 1
+
+  audio_fx_volume:
+    name: Volume effetti audio
+    min: 0.1
+    max: 1
+    step: 0.1
+
+automation:
+  # Alle 6 di mattina, se "Effetti sonori automatici" è attivo, viene attivato o disattivato l'effetto sonoro dell'occasione
+  - id: 0a7ad8ba-4044-46bc-842d-7a9730828fed
+    alias: Alexa - Logica - Attivazione effetti sonori automatici
+    trigger:
+      - platform: time
+        at: "06:00"
+    condition:
+      - alias: "Se attivati effetti sonori automatici"
+        condition: state
+        entity_id: input_boolean.audio_fx_auto
+        state: "on"
+    action:
+      - alias: "A seconda del giorno"
+        choose:
+        # Inizio Halloween
+        - conditions: "{{(now().day, now().month) == (28, 10)}}"
+          sequence:
+            - service: input_select.select_option
+              target:
+                entity_id: input_select.audio_fx
+              data:
+                option: Halloween
+        # Fine Halloween
+        - conditions: "{{(now().day, now().month) == (3, 11)}}"
+          sequence:
+            - service: input_select.select_option
+              target:
+                entity_id: input_select.audio_fx
+              data:
+                option: "No FX"
+        # Inizio Natale
+        - conditions: "{{(now().day, now().month) == (22, 12)}}"
+          sequence:
+            - service: input_select.select_option
+              target:
+                entity_id: input_select.audio_fx
+              data:
+                option: Christmas
+        # Fine Natale
+        - conditions: "{{(now().day, now().month) == (27, 12)}}"
+          sequence:
+            - service: input_select.select_option
+              target:
+                entity_id: input_select.audio_fx
+              data:
+                option: "No FX"
+        # Inizio compleanno
+        - conditions: "{{(now().day, now().month) in [(22, 2), (8, 5), (20, 6), (16, 21)]}}"
+          sequence:
+            - service: input_select.select_option
+              target:
+                entity_id: input_select.audio_fx
+              data:
+                option: Birthday
+        # Fine compleanno
+        - conditions: "{{(now().day, now().month) in [(23, 2), (9, 5), (21, 6), (17, 21)]}}"
+          sequence:
+            - service: input_select.select_option
+              target:
+                entity_id: input_select.audio_fx
+              data:
+                option: "No FX"
+
+  - id: 9622c881-8a69-477f-9dc6-ec61a949dfca
+    alias: Alexa - Notifica - Audio FX random
+    trigger:
+      - platform: time_pattern
+        hours: "*"
+        minutes: "/1"
+        seconds: "30"
+    condition:
+      - condition: not
+        conditions:
+          - alias: "Selezionato nessun effetto audio"
+            condition: state
+            entity_id: input_select.audio_fx
+            state: "No FX"
+          - alias: "Antonella a letto"
+            condition: state
+            entity_id: binary_sensor.letto_antonella_occupato
+            state: "on"
+          - alias: "Henrik a letto"
+            condition: state
+            entity_id: binary_sensor.letto_henrik_occupato
+            state: "on"
+          - alias: "Erica a letto"
+            condition: state
+            entity_id: binary_sensor.letto_erica_occupato
+            state: "on"
+          - alias: "Ilaria a letto"
+            condition: state
+            entity_id: binary_sensor.letto_ilaria_occupato
+            state: "on"
+      - "{{ range(states('input_number.audio_fx_improbability') | int(0)) | random == 0 }}" # Proabilità variabile di riprodurre un suono
+    action:
+      - variables:
+          alexa_device: >
+            {% set alexa_devices = expand(states.group.ovunque) | map(attribute='entity_id') | list %}
+            {% set rnd = range(alexa_devices | count) | random %}
+            {{ alexa_devices[rnd] }}
+          fx_type: "{{states('input_select.audio_fx') | default('No FX')}}"
+          fx: >
+            {% if fx_type == 'Halloween' %}
+              <audio src="soundbank://soundlibrary/horror/horror_{{"{:0>2}".format(range(1, 16) | random)}}"/>
+            {% elif fx_type == 'Christmas' %}
+              <audio src="soundbank://soundlibrary/holidays/christmas/christmas_{{"{:0>2}".format(range(1, 6) | random)}}"/>
+            {% elif fx_type == 'Birthday' %}
+              <audio src="soundbank://soundlibrary/bell/chimes/chimes_{{"{:0>2}".format(range(1, 15) | random)}}"/>
+            {% endif %}
+      # Se il dispositivo Alexa non sta riproducendo già qualcosa
+      - alias: "Se il dispositivo Alexa non sta riproducendo qualcosa"
+        condition: template
+        value_template: "{{ states(alexa_device) == 'standby' }}"
+      # Riproduco il suono!
+      - alias: "Riproduce il suono"
+        service: script.multinotify
+        data:
+          message: '{{fx}}'
+          alexa_target: "{{alexa_device}}"
+          alexa_type: tts
+          alexa_volume: "{{ states('input_number.audio_fx_volume') | float(0.6) }}"
