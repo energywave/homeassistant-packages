@@ -115,14 +115,14 @@ automation:
     alias: Alexa - Notifica - Audio FX su trigger
     trigger:
       - platform: state
-        entity_id: binary_sensor.motion_scala
+        entity_id: binary_sensor.motion_scala_occupancy
         id: "scala"
         to: "on"
         not_from:
           - "unknown"
           - "unavailable"
       - platform: state
-        entity_id: binary_sensor.motion_corridoio
+        entity_id: binary_sensor.motion_corridoio_occupancy
         id: "corridoio"
         to: "on"
         not_from:
@@ -141,14 +141,16 @@ automation:
             {% set devices = {"scala": "media_player.primo_piano", 
                               "corridoio": "media_player.primo_piano", 
                               "pian_terreno": "media_player.pian_terreno"}%}
-            {% if trigger.id is devices %}
-              {{ devices[triggerid]}}
+            {% if trigger.id in devices %}
+              {{ devices[trigger.id]}}
             {% else %}
               none
             {% endif %}
-      - service: script.audio_fx
-        data:
-          alexa_target: "{{alexa_device}}"
+      - if: "{{ not alexa_device is none }}"
+        then:
+          - service: script.audio_fx
+            data:
+              alexa_target: "{{alexa_device}}"
 
 script:
   # Riproduce un suono sul dispositivo alexa specificato, se nessuno è a letto e se c'è qualcuno a casa
