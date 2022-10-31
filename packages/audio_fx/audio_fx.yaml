@@ -90,6 +90,7 @@ automation:
               data:
                 option: "No FX"
 
+  # Riproduce un suono random su una Alexa random, una volta ogni x minuti (mediamente, a seconda della probabilità selezionata)
   - id: 9622c881-8a69-477f-9dc6-ec61a949dfca
     alias: Alexa - Notifica - Audio FX random
     trigger:
@@ -98,28 +99,6 @@ automation:
         minutes: "/1"
         seconds: "30"
     condition:
-      - condition: not
-        conditions:
-          - alias: "Selezionato nessun effetto audio"
-            condition: state
-            entity_id: input_select.audio_fx
-            state: "No FX"
-          - alias: "Antonella a letto"
-            condition: state
-            entity_id: binary_sensor.letto_antonella_occupato
-            state: "on"
-          - alias: "Henrik a letto"
-            condition: state
-            entity_id: binary_sensor.letto_henrik_occupato
-            state: "on"
-          - alias: "Erica a letto"
-            condition: state
-            entity_id: binary_sensor.letto_erica_occupato
-            state: "on"
-          - alias: "Ilaria a letto"
-            condition: state
-            entity_id: binary_sensor.letto_ilaria_occupato
-            state: "on"
       - "{{ range(states('input_number.audio_fx_improbability') | int(0)) | random == 0 }}" # Proabilità variabile di riprodurre un suono
     action:
       - variables:
@@ -127,6 +106,92 @@ automation:
             {% set alexa_devices = expand(states.group.ovunque) | map(attribute='entity_id') | list %}
             {% set rnd = range(alexa_devices | count) | random %}
             {{ alexa_devices[rnd] }}
+      - service: script.audio_fx
+        data:
+          alexa_target: "{{alexa_device}}"
+  
+  # Riproduce un suono random su un dispositivo Alexa prossimo al sensore di movimento quando sollecitato
+  - id: c94c813c-09b7-4b36-a8ed-bcca05d571e8
+    alias: Alexa - Notifica - Audio FX su trigger
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.motion_scala
+        id: "scala"
+        to: "on"
+        not_from:
+          - "unknown"
+          - "unavailable"
+      - platform: state
+        entity_id: binary_sensor.motion_corridoio
+        id: "corridoio"
+        to: "on"
+        not_from:
+          - "unknown"
+          - "unavailable"
+      - platform: state
+        entity_id: binary_sensor.pian_terreno_occupancy
+        id: "pian_terreno"
+        to: "on"
+        not_from:
+          - "unknown"
+          - "unavailable"
+    action:
+      - variables:
+          alexa_device: >
+            {% set devices = {"scala": "media_player.primo_piano", 
+                              "corridoio": "media_player.primo_piano", 
+                              "pian_terreno": "media_player.pian_terreno"}%}
+            {% if trigger.id is devices %}
+              {{ devices[triggerid]}}
+            {% else %}
+              none
+            {% endif %}
+      - service: script.audio_fx
+        data:
+          alexa_target: "{{alexa_device}}"
+
+script:
+  # Riproduce un suono sul dispositivo alexa specificato, se nessuno è a letto e se c'è qualcuno a casa
+  audio_fx:
+    alias: "Riproduci suono casuale sul media_player specificato"
+    fields:
+      alexa_target:
+        name: "Alexa target"
+        description: "Alexa device target"
+        selector:
+          entity:
+            integration: alexa_media
+            domain: media_player
+        example: "media_player.first_floor_alexa"
+    sequence:
+      - condition:
+          - alias: "Qualcuno a casa?"
+            condition: state
+            entity_id: group.anyone_at_home
+            state: "on"
+          - condition: not
+            conditions:
+              - alias: "Selezionato nessun effetto audio"
+                condition: state
+                entity_id: input_select.audio_fx
+                state: "No FX"
+              - alias: "Antonella a letto"
+                condition: state
+                entity_id: binary_sensor.letto_antonella_occupato
+                state: "on"
+              - alias: "Henrik a letto"
+                condition: state
+                entity_id: binary_sensor.letto_henrik_occupato
+                state: "on"
+              - alias: "Erica a letto"
+                condition: state
+                entity_id: binary_sensor.letto_erica_occupato
+                state: "on"
+              - alias: "Ilaria a letto"
+                condition: state
+                entity_id: binary_sensor.letto_ilaria_occupato
+                state: "on"
+      - variables:
           fx_type: "{{states('input_select.audio_fx') | default('No FX')}}"
           fx: >
             {% if fx_type == 'Halloween' %}
@@ -135,16 +200,18 @@ automation:
               <audio src="soundbank://soundlibrary/holidays/christmas/christmas_{{"{:0>2}".format(range(1, 6) | random)}}"/>
             {% elif fx_type == 'Birthday' %}
               <audio src="soundbank://soundlibrary/bell/chimes/chimes_{{"{:0>2}".format(range(1, 15) | random)}}"/>
+            {% else %}
+              <audio src="soundbank://soundlibrary/animals/amzn_sfx_cat_meow_1x_{{"{:0>2}".format(range(1, 3) | random)}}"/>
             {% endif %}
       # Se il dispositivo Alexa non sta riproducendo già qualcosa
       - alias: "Se il dispositivo Alexa non sta riproducendo qualcosa"
         condition: template
-        value_template: "{{ states(alexa_device) == 'standby' }}"
+        value_template: "{{ states(alexa_target) == 'standby' }}"
       # Riproduco il suono!
       - alias: "Riproduce il suono"
         service: script.multinotify
         data:
           message: '{{fx}}'
-          alexa_target: "{{alexa_device}}"
+          alexa_target: "{{alexa_target}}"
           alexa_type: tts
           alexa_volume: "{{ states('input_number.audio_fx_volume') | float(0.6) }}"
