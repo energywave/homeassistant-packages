@@ -8,6 +8,7 @@ entities:
   - entity: input_number.audio_fx_improbability
     name: Frequenza minuti media
   - entity: input_number.audio_fx_volume
+  - entity: input_boolean.audio_fx_lights
 title: Effetti sonori
 show_header_toggle: false
 state_color: false

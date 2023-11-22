@@ -1,0 +1,32 @@
+type: conditional
+conditions:
+  - entity: input_select.audio_fx
+    state_not: No FX
+card:
+  type: entities
+  entities:
+    - entity: script.audio_fx
+      name: Pian terreno
+      icon: mdi:volume-high
+      tap_action:
+        action: call-service
+        service: script.audio_fx
+        data:
+          alexa_target: media_player.pian_terreno
+    - entity: script.audio_fx
+      name: Primo piano
+      icon: mdi:volume-high
+      tap_action:
+        action: call-service
+        service: script.audio_fx
+        data:
+          alexa_target: media_player.primo_piano
+    - entity: script.audio_fx
+      name: Mansarda
+      icon: mdi:volume-high
+      tap_action:
+        action: call-service
+        service: script.audio_fx
+        data:
+          alexa_target: media_player.mansarda
+  title: Effetti audio
