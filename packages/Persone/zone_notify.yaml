@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------------------------
-# Package Persone - work - Ver. 1.0
+# Package Persone - work - Ver. 1.1
 # Descrizione: notifiche quando entriamo o usciamo dal lavoro
 # ------------------------------------------------------------------------------------------------
 # Autore: Henrik Sozzi
@@ -8,6 +8,9 @@
 # CHANGELOG
 # Ver. 1.0 - 05/05/2021
 #   - Miglioramenti per pubblicazione
+# Ver. 1.1 - 10/11/2023
+#   - Aggiunti valori di default a conversioni int(0)
+#   - Migliorie stilistiche e usati trigger più compatti
 # ------------------------------------------------------------------------------------------------
 # Distribuito con licenza: CC BY-NC-SA 4.0
 # Formato leggibile da un essere umano: https://creativecommons.org/licenses/by-nc-sa/4.0/deed.it
@@ -28,19 +31,19 @@ automation:
     description: "Quando Henrik esce dalla zona lavoro dopo le ore 19:00 annuncia il ritorno a casa con Alexa"
     trigger:
       - entity_id: person.henrik_sozzi
-        from: Ufficio
+        from: ufficio
         platform: state
     condition:
       - condition: template
-        value_template: "{{ (as_timestamp(now()) - as_timestamp(state_attr('automation.persone_notifica_henrik_ritorna_dal_lavoro', 'last_triggered') | default(0)) | int > 1800)}}"  
+        value_template: "{{ (as_timestamp(now()) - as_timestamp(state_attr('automation.persone_notifica_henrik_ritorna_dal_lavoro', 'last_triggered') | default(0)) | int(0) > 1800)}}"
       - condition: state
         entity_id: input_boolean.notifiche_lavoro
-        state: 'on'
+        state: "on"
       - condition: or
         conditions:
           - condition: time
-            after: '19:00:00'
-            before: '22:00:00'
+            after: "19:00:00"
+            before: "22:00:00"
             weekday:
               - mon
               - tue
@@ -51,10 +54,10 @@ automation:
             conditions:
               - condition: state
                 entity_id: input_boolean.henrik_ritorno_a_pranzo
-                state: 'on'
+                state: "on"
               - condition: time
-                after: '11:40:00'
-                before: '14:00:00'
+                after: "11:40:00"
+                before: "14:00:00"
                 weekday:
                   - mon
                   - tue
@@ -68,7 +71,7 @@ automation:
           message: "Henrik sta tornando dall'ufficio!"
           alexa_message: '<say-as interpret-as="interjection">yippii</say-as>. Papà sta tornando dall ufficio!'
           alexa_target: media_player.ovunque
-          notify_app: notify.all_devices
+          notify_app: notify.all_android_devices
           channel: people-fromwork
           group: people
           tag: "{{trigger.to_state.name}} home"
@@ -78,16 +81,16 @@ automation:
     description: "Avvisa tramite Alexa quando Anto esce dal negozio"
     trigger:
       - entity_id: person.antonella
-        from: Negozio
+        from: negozio
         platform: state
     condition:
       - condition: template
-        value_template: "{{ (as_timestamp(now()) - as_timestamp(state_attr('automation.persone_notifica_antonella_arriva_in_negozio', 'last_triggered') | default(0)) | int > 1800)}}"  
+        value_template: "{{ (as_timestamp(now()) - as_timestamp(state_attr('automation.persone_notifica_antonella_arriva_in_negozio', 'last_triggered') | default(0)) | int(0) > 1800)}}"
       - condition: template
-        value_template: "{{ (as_timestamp(now()) - as_timestamp(state_attr('automation.persone_notifica_antonella_esce_dal_negozio', 'last_triggered') | default(0)) | int > 1800)}}"  
+        value_template: "{{ (as_timestamp(now()) - as_timestamp(state_attr('automation.persone_notifica_antonella_esce_dal_negozio', 'last_triggered') | default(0)) | int(0) > 1800)}}"
       - condition: state
         entity_id: input_boolean.notifiche_lavoro
-        state: 'on'
+        state: "on"
     action:
       - service: script.multinotify
         data:
@@ -95,7 +98,7 @@ automation:
           message: Antonella è uscita dal negozio!
           alexa_message: '<say-as interpret-as="interjection">yippii</say-as>. La mamma è uscita dal negozio!'
           alexa_target: media_player.ovunque
-          notify_app: notify.all_devices
+          notify_app: notify.all_android_devices
           channel: people-fromwork
           group: people
           tag: "{{trigger.to_state.name}} home"
@@ -106,15 +109,15 @@ automation:
     trigger:
       - entity_id: person.antonella
         platform: state
-        to: Negozio
+        to: negozio
     condition:
       - condition: template
-        value_template: "{{ (as_timestamp(now()) - as_timestamp(state_attr('automation.persone_notifica_antonella_arriva_in_negozio', 'last_triggered') | default(0)) | int > 1800)}}"  
+        value_template: "{{ (as_timestamp(now()) - as_timestamp(state_attr('automation.persone_notifica_antonella_arriva_in_negozio', 'last_triggered') | default(0)) | int(0) > 1800)}}"
       - condition: template
-        value_template: "{{ (as_timestamp(now()) - as_timestamp(state_attr('automation.persone_notifica_antonella_esce_dal_negozio', 'last_triggered') | default(0)) | int > 1800)}}"  
+        value_template: "{{ (as_timestamp(now()) - as_timestamp(state_attr('automation.persone_notifica_antonella_esce_dal_negozio', 'last_triggered') | default(0)) | int(0) > 1800)}}"
       - condition: state
         entity_id: input_boolean.notifiche_lavoro
-        state: 'on'
+        state: "on"
     action:
       - service: script.multinotify
         data:
@@ -122,7 +125,7 @@ automation:
           message: Antonella è arrivata in negozio!
           alexa_message: '<say-as interpret-as="interjection">din don</say-as>. La mamma è arrivata in negozio!'
           alexa_target: media_player.ovunque
-          notify_app: notify.all_devices
+          notify_app: notify.all_android_devices
           channel: people-towork
           group: people
           tag: "{{trigger.to_state.name}} home"
@@ -133,75 +136,53 @@ automation:
     trigger:
       # To: home
       - platform: state
-        entity_id: person.henrik_sozzi
-        to: "home"
+        entity_id:
+          - binary_sensor.henrik_at_home
+          - binary_sensor.antonella_at_home
+          - binary_sensor.erica_at_home
+        to:
+          - "on"
+          - "off"
+        not_from:
+          - "unknown"
+          - "unavailable"
       - platform: state
-        entity_id: person.antonella
-        to: "home"
-      - platform: state
-        entity_id: person.erica
-        to: "home"
-      - platform: state
-        entity_id: person.angelo
-        to: "home"
-      - platform: state
-        entity_id: person.ankie
-        to: "home"
-      - platform: state
-        entity_id: person.anna
-        to: "home"
-      - platform: state
-        entity_id: person.giuseppe
-        to: "home"
-      - platform: state
-        entity_id: person.paola
-        to: "home"
-      # From: home
-      - platform: state
-        entity_id: person.henrik_sozzi
-        from: "home"
-      - platform: state
-        entity_id: person.antonella
-        from: "home"
-      - platform: state
-        entity_id: person.erica
-        from: "home"
-      - platform: state
-        entity_id: person.angelo
-        from: "home"
-      - platform: state
-        entity_id: person.ankie
-        from: "home"
-      - platform: state
-        entity_id: person.anna
-        from: "home"
-      - platform: state
-        entity_id: person.giuseppe
-        from: "home"
-      - platform: state
-        entity_id: person.paola
-        from: "home"
+        entity_id:
+          - person.nonno
+          - person.nonna
+          - person.zia
+          - person.cognato
+          - person.suocera
+        to:
+          - "home"
+          - "not_home"
+        not_from:
+          - "unknown"
+          - "unavailable"
+    variables:
+      name: "{{ trigger.to_state.name if trigger.to_state.domain == 'person' else trigger.to_state.attributes.name }}"
+      home: "{{ trigger.to_state.state == 'home' if trigger.to_state.domain == 'person' else trigger.to_state.state == 'on' }}"
     action:
       - service: script.multinotify
         data:
           notify_app: notify.mobile_app_tel_henrik
           title: >
-            {% if trigger.to_state.state == 'home' %}
-              {{trigger.to_state.name}} è a casa
+            {% if home %}
+              {{name}} è a casa
             {% else %}
-              {{trigger.to_state.name}} non è più a casa
+              {{name}} non è più a casa
             {% endif %}
           message: >
-            {% if trigger.to_state.state == 'home' %}
-              {{trigger.to_state.name}} è ora entrato/a a casa
+            {% if home %}
+              {{name}} è ora entrato/a a casa
             {% else %}
-              {{trigger.to_state.name}} è ora uscito/a da casa
+              {{name}} è ora uscito/a da casa
             {% endif %}
           channel: >
-            {% if trigger.to_state.state == 'home' %}
+            {% if home %}
               people-tohome
             {% else %}
               people-fromhome
             {% endif %}
           group: people
-          tag: "{{trigger.to_state.name}} home"     
+          tag: "{{name}} home"
