@@ -1,0 +1,290 @@
+input_boolean:
+  heat_active:
+    name: Riscaldamento attivo
+    icon: mdi:heat-wave
+
+input_number:
+  heat_manual_pian_terreno:
+    name: Temp. manuale pian terreno
+    icon: mdi:thermometer
+    min: 15
+    max: 25
+    step: 0.1
+  heat_manual_cameretta:
+    name: Temp. manuale cameretta
+    icon: mdi:thermometer
+    min: 15
+    max: 25
+    step: 0.1
+  heat_manual_bagno:
+    name: Temp. manuale bagno
+    icon: mdi:thermometer
+    min: 15
+    max: 25
+    step: 0.1
+  heat_manual_mansarda:
+    name: Temp. manuale mansarda
+    icon: mdi:thermometer
+    min: 15
+    max: 25
+    step: 0.1
+  heat_manual_bagno_mansarda:
+    name: Temp. manuale bagno mansarda
+    icon: mdi:thermometer
+    min: 15
+    max: 25
+    step: 0.1
+  heat_not_home_mansarda:
+    name: Temp. assenza mansarda
+    icon: mdi:thermometer
+    min: 15
+    max: 25
+    step: 0.1
+  heat_not_home_bagno_mansarda:
+    name: Temp. assenza bagno mansarda
+    icon: mdi:thermometer
+    min: 15
+    max: 25
+    step: 0.1
+
+template:
+  - sensor:
+      - name: Riscaldamento
+        unique_id: 7ffdd926-9d89-45c6-ada3-e7533afdb2da
+        #Ogni calorifero è moltiplicato per il numero di elementi radianti e moltiplicato per 1.5 se presente una ventola per il maggiore scambio termico
+        state: >
+          {{
+          (
+            (states('sensor.pian_terreno_heating') | float(0) * (21 * 1.5 + 14)) +
+            (states('sensor.bagno_heating') | float(0) * 8) +
+            (states('sensor.camera_heating') | float(0) * 10) +
+            (states('sensor.cameretta_heating') | float(0) * 10) +
+            (states('sensor.mansarda_heating') | float(0) * (8 * 1.5 + 8)) +
+            (states('sensor.bagno_mansarda_heating') | float(0) * 8)
+          ) / (21 * 1.5 + 14 + 8 + 10 + 10 + 8 * 1.5 + 8 + 8) | round(1)
+          }}
+        availability: >
+          {{
+            is_number(states('sensor.pian_terreno_heating')) and
+            is_number(states('sensor.bagno_heating')) and
+            is_number(states('sensor.camera_heating')) and
+            is_number(states('sensor.cameretta_heating')) and
+            is_number(states('sensor.mansarda_heating')) and
+            is_number(states('sensor.bagno_mansarda_heating'))
+          }}
+        unit_of_measurement: "%"
+        state_class: measurement
+        icon: mdi:heat-wave
+
+sensor:
+  # Contabilizzazione della percentuale di riscaldamento (come energy per i consumi)
+  - platform: integration
+    source: sensor.riscaldamento
+    name: Riscaldamento energy
+    method: trapezoidal
+    unique_id: bc21777d-79c7-4e7d-8400-074899a679ad
+
+utility_meter:
+  # Consumo riscaldamento
+  daily_riscaldamento:
+    source: sensor.riscaldamento
+    name: Riscaldamento giorno
+    unique_id: 45678adb-69be-42ed-9b54-8a9b4e024dc1
+    cycle: daily
+  monthly_riscaldamento:
+    source: sensor.riscaldamento
+    name: Riscaldamento mese
+    unique_id: 1d6f77f8-27bd-4665-9cc4-766a3a52a544
+    cycle: monthly
+  yearly_riscaldamento:
+    source: sensor.riscaldamento
+    name: Riscaldamento anno
+    unique_id: b8e66b7a-74cd-448a-94fe-3d7adf9807da
+    cycle: yearly
+
+automation:
+  - id: 2106efff-dc25-470a-81dd-1a6784650f9d
+    alias: Clima - Azione - Temperatura manuale aggiornata
+    trigger:
+      - platform: state
+        entity_id:
+          - input_number.heat_manual_bagno
+          - input_number.heat_manual_bagno_mansarda
+          - input_number.heat_manual_cameretta
+          - input_number.heat_manual_mansarda
+          - input_number.heat_manual_pian_terreno
+        to:
+    action:
+      - variables:
+          source_entity_id: "{{trigger.entity_id}}"
+          source_area_id: "{{area_id(source_entity_id)}}"
+          source_area_name: "{{area_name(source_area_id)}}"
+          climate_entity_id: "{{ expand(states.climate) | selectattr('entity_id', 'in', area_entities(source_area_id)) | selectattr('attributes.supported_features', 'eq', 17) | map(attribute='entity_id') | list | first | default('') }}"
+      - if: "{{ climate_entity_id != '' }}"
+        then:
+          #TODO: Gestire il caso in cui ci sia una finestra aperta nella stanza...
+          - service: script.imposta_riscaldamento
+            data:
+              entity: "{{climate_entity_id}}"
+        else:
+          - service: script.multinotify
+            data:
+              title: Impostazione temperatura fallita
+              message: "Non è stato possibile trovare il dispositivo di riscaldamento della stanza {{source_area_name}}, la temperatura impsotata da {{trigger.to_state.name | default('senza nome')}}"
+              notify_ha: true
+
+script:
+  spegni_riscaldamento:
+    alias: "Spegni riscaldamento in una stanza"
+    description: "Spegne il riscaldamento in una stanza (finestra aperta)"
+    fields:
+      entity:
+        description: "Entity ID di tipo Climate (specificare tra apici)"
+        example: "climate.camera"
+    sequence:
+      - service: climate.set_temperature
+        data:
+          entity_id: "{{ entity }}"
+          temperature: 10
+
+  imposta_riscaldamento:
+    alias: "Imposta il riscaldamento in una stanza"
+    description: "Imposta automaticamente il riscaldamento in una stanza (in funzione di vari parametri)"
+    trace:
+      stored_traces: 30
+    fields:
+      entity:
+        description: "Entity id di tipo Climate (specificare tra apici)"
+        example: "climate.camera"
+        selector:
+          entity:
+            domain: climate
+    sequence:
+      - if: "{{ is_state('input_boolean.heat_active', 'off') }}"
+        then:
+          - service: climate.turn_off
+            target:
+              entity_id: "{{ entity }}"
+        else:
+          - choose:
+              # Pian terreno
+              - conditions: "{{ entity == 'climate.pian_terreno' }}"
+                sequence:
+                  - if: "{{ is_state('input_boolean.parenti_a_casa_da_soli', 'on') }}"
+                    then:
+                      - service: climate.set_temperature
+                        data:
+                          entity_id: "{{ entity }}"
+                          temperature: "{{ states('input_number.heat_manual_pian_terreno') | round(1, default=20) }}"
+                          hvac_mode: "heat"
+                    else:
+                      - service: climate.set_hvac_mode
+                        data:
+                          entity_id: "{{ entity }}"
+                          hvac_mode: "auto"
+
+              # Cameretta
+              - conditions: "{{ entity == 'climate.cameretta' }}"
+                sequence:
+                  - if: "{{ is_state('input_boolean.parenti_a_casa_da_soli', 'on') }}"
+                    then:
+                      - service: climate.set_temperature
+                        data:
+                          entity_id: "{{ entity }}"
+                          temperature: "{{ states('input_number.heat_manual_cameretta') | round(1, default=20) }}"
+                          hvac_mode: "heat"
+                    else:
+                      - service: climate.set_hvac_mode
+                        data:
+                          entity_id: "{{ entity }}"
+                          hvac_mode: "auto"
+
+              # Bagno
+              - conditions: "{{ entity == 'climate.bagno' }}"
+                sequence:
+                  - if: "{{ is_state('input_boolean.parenti_a_casa_da_soli', 'on') }}"
+                    then:
+                      - service: climate.set_temperature
+                        data:
+                          entity_id: "{{ entity }}"
+                          temperature: "{{ states('input_number.heat_manual_bagno') | round(1, default=20) }}"
+                          hvac_mode: "heat"
+                    else:
+                      - service: climate.set_hvac_mode
+                        data:
+                          entity_id: "{{ entity }}"
+                          hvac_mode: "auto"
+
+              # Mansarda
+              - conditions: "{{ entity == 'climate.mansarda' }}"
+                sequence:
+                  - choose:
+                      # Se il PC è acceso oppure Erica è a casa senza genirori imposto mansarda o bagno mansarda in manuale caldo.
+                      - conditions: "{{ is_state('device_tracker.hshome', 'home') or (is_state('binary_sensor.erica_at_home', 'on') and is_state('binary_sensor.utenti_tado_a_casa', 'off')) }}"
+                        sequence:
+                          - service: climate.set_temperature
+                            data:
+                              entity_id: "{{ entity }}"
+                              temperature: "{{ states('input_number.heat_manual_mansarda') | round(1, default=20) }}"
+                              hvac_mode: heat
+                      # Se Erica è a casa e i genitori sono a casa imposto in automatico (così Tado fa la schedulazione configurata)
+                      - conditions: "{{ is_state('binary_sensor.erica_at_home', 'on') and is_state('binary_sensor.utenti_tado_a_casa', 'on') }}"
+                        sequence:
+                          - service: climate.set_hvac_mode
+                            data:
+                              entity_id: "{{ entity }}"
+                              hvac_mode: "auto"
+                      # Se Erica non è acasa ma i genitori sono a casa imposta la tamperatura su "non a casa" in manuale
+                      - conditions: "{{ is_state('binary_sensor.erica_at_home', 'off') and is_state('binary_sensor.utenti_tado_a_casa', 'on')}}"
+                        sequence:
+                          - service: climate.set_temperature
+                            data:
+                              entity_id: "{{ entity }}"
+                              temperature: "{{ states('input_number.heat_not_home_mansarda') | round(1, default=20) }}"
+                              hvac_mode: heat
+                    # Negli altri casi (tutti fuori casa) imposto in automatico
+                    default:
+                      - service: climate.set_hvac_mode
+                        data:
+                          entity_id: "{{ entity }}"
+                          hvac_mode: "auto"
+
+              # Bagno mansarda
+              - conditions: "{{ entity == 'climate.bagno_mansarda' }}"
+                sequence:
+                  - choose:
+                      # Se il PC è acceso oppure Erica è a casa senza genirori imposto mansarda o bagno mansarda in manuale caldo.
+                      - conditions: "{{ is_state('device_tracker.hshome', 'home') or (is_state('binary_sensor.erica_at_home', 'on') and is_state('binary_sensor.utenti_tado_a_casa', 'off')) }}"
+                        sequence:
+                          - service: climate.set_temperature
+                            data:
+                              entity_id: "{{ entity }}"
+                              temperature: "{{ states('input_number.heat_manual_bagno_mansarda') | round(1, default=20) }}"
+                              hvac_mode: heat
+                      # Se Erica è a casa e i genitori sono a casa imposto in automatico (così Tado fa la schedulazione configurata)
+                      - conditions: "{{ is_state('binary_sensor.erica_at_home', 'on') and is_state('binary_sensor.utenti_tado_a_casa', 'on') }}"
+                        sequence:
+                          - service: climate.set_hvac_mode
+                            data:
+                              entity_id: "{{ entity }}"
+                              hvac_mode: "auto"
+                      # Se Erica non è acasa ma i genitori sono a casa imposta la tamperatura su "non a casa" in manuale
+                      - conditions: "{{ is_state('binary_sensor.erica_at_home', 'off') and is_state('binary_sensor.utenti_tado_a_casa', 'on')}}"
+                        sequence:
+                          - service: climate.set_temperature
+                            data:
+                              entity_id: "{{ entity }}"
+                              temperature: "{{ states('input_number.heat_not_home_mansarda') | round(1, default=20) }}"
+                              hvac_mode: heat
+                    # Negli altri casi (tutti fuori casa) imposto in automatico
+                    default:
+                      - service: climate.set_hvac_mode
+                        data:
+                          entity_id: "{{ entity }}"
+                          hvac_mode: "auto"
+            # Stanze non nominate sopra (rimane la camera)
+            default:
+              - service: climate.set_hvac_mode
+                data:
+                  entity_id: "{{ entity }}"
+                  hvac_mode: "auto"
