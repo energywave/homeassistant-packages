@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------------------------
-# Package Persone - riscaldamento - Ver. 1.0
+# Package Persone - riscaldamento - Ver. 1.1
 # Descrizione: gestione riscaldamento quando qualcuno cura le bambine e noi siamo fuori
 # ------------------------------------------------------------------------------------------------
 # Autore: Henrik Sozzi
@@ -8,6 +8,9 @@
 # CHANGELOG
 # Ver. 1.0 - 05/05/2021
 #   - Miglioramenti per pubblicazione
+# Ver. 1.1 - 10/11/2023
+#   - Valutazione stato presenza persone per eccezioni temperatura in mansarda
+#   - Rinominati gruppi per maggior chiarezza
 # ------------------------------------------------------------------------------------------------
 # Distribuito con licenza: CC BY-NC-SA 4.0
 # Formato leggibile da un essere umano: https://creativecommons.org/licenses/by-nc-sa/4.0/deed.it
@@ -24,54 +27,54 @@ automation:
     alias: Persone - Logica - Uscita con parenti a casa
     description: All'uscita di casa quando uno o più parenti sono casa
     trigger:
-    - entity_id: group.parents
-      platform: state
-      from: home
+      - entity_id: binary_sensor.utenti_tado_a_casa
+        platform: state
+        from: "on"
     condition:
-    - condition: state
-      entity_id: group.relatives
-      state: home
+      - condition: state
+        entity_id: group.relatives
+        state: home
     action:
-    - service: input_boolean.turn_on
-      entity_id: input_boolean.parenti_a_casa_da_soli
+      - service: input_boolean.turn_on
+        entity_id: input_boolean.parenti_a_casa_da_soli
 
   - id: 0b579bbd-4ac6-45af-9b96-319e98dfcb0a
     alias: Persone - Logica - Parenti escono
     description: Parenti escono con nessuno a casa
     trigger:
-    - entity_id: group.relatives
-      platform: state
-      from: home
+      - entity_id: group.relatives
+        platform: state
+        from: home
     condition:
-    - condition: state
-      entity_id: group.parents
-      state: not_home
+      - condition: state
+        entity_id: binary_sensor.utenti_tado_a_casa
+        state: "off"
     action:
-    - service: input_boolean.turn_off
-      entity_id: input_boolean.parenti_a_casa_da_soli
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.parenti_a_casa_da_soli
 
   - id: 6b646b61-f3b7-4782-a4e1-f1e78243267f
     alias: Persone - Logica - Parenti rientrano
     description: Parenti rientrano a casa con nessuno di noi
     trigger:
-    - entity_id: group.relatives
-      platform: state
-      to: home
+      - entity_id: group.relatives
+        platform: state
+        to: home
     condition:
-    - condition: state
-      entity_id: group.parents
-      state: not_home
+      - condition: state
+        entity_id: binary_sensor.utenti_tado_a_casa
+        state: "off"
     action:
-    - service: input_boolean.turn_on
-      entity_id: input_boolean.parenti_a_casa_da_soli
+      - service: input_boolean.turn_on
+        entity_id: input_boolean.parenti_a_casa_da_soli
 
   - id: abad74dc-b21f-4cde-a732-f173a8e3359f
     alias: Persone - Logica - Rientro con parenti a casa
     description: Qualcuno di noi rientra con parenti a casa
     trigger:
-      - entity_id: group.parents
+      - entity_id: binary_sensor.utenti_tado_a_casa
         platform: state
-        to: home
+        to: "on"
     condition:
       - condition: state
         entity_id: group.relatives
@@ -88,33 +91,37 @@ automation:
     trigger:
       - platform: state
         entity_id: input_boolean.parenti_a_casa_da_soli
-    condition: []
+      - platform: homeassistant
+        event: start
     action:
       - service: script.imposta_riscaldamento
         data:
-          entity: 'climate.pian_terreno'
+          entity: "climate.pian_terreno"
       - service: script.imposta_riscaldamento
         data:
-          entity: 'climate.cameretta'
+          entity: "climate.cameretta"
       - service: script.imposta_riscaldamento
         data:
-          entity: 'climate.bagno'
+          entity: "climate.bagno"
 
-  # Accensione / spegnimento PC
+  # Cambio riscaldamento inerente a mansarda
   - id: 7798c699-e3dd-46ed-bd1f-48f064b19cb5
-    alias: Clima - Azione - Accensione/Spegnimento PC
-    description: Scalda la mansarda quando si accende il PC
+    alias: Clima - Azione - Cambio riscaldamento mansarda
+    description: Impostazione riscaldamento su eventi inerenti la mansarda
     trigger:
-      - entity_id: device_tracker.hshome
-        platform: state
+      - platform: state
+        entity_id:
+          - device_tracker.hshome
+          - binary_sensor.erica_at_home
+          - binary_sensor.henrik_at_home
+          - binary_sensor.antonella_at_home
         to:
       - platform: homeassistant
         event: start
-    condition: []
     action:
       - service: script.imposta_riscaldamento
         data:
-          entity: 'climate.mansarda'
+          entity: "climate.mansarda"
       - service: script.imposta_riscaldamento
         data:
-          entity: 'climate.bagno_mansarda'
+          entity: "climate.bagno_mansarda"
