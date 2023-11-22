@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------------------------
-# Package Persone - saluto_entrata - Ver. 1.0
+# Package Persone - saluto_entrata - Ver. 1.1
 # Descrizione: saluto personale e musica quando si entra in casa
 # ------------------------------------------------------------------------------------------------
 # Autore: Henrik Sozzi
@@ -8,6 +8,9 @@
 # CHANGELOG
 # Ver. 1.0 - 05/05/2021
 #   - Miglioramenti per pubblicazione
+# Ver. 1.1 - 22/11/2023
+#   - Tornato ad usare binary_sensor anzi che person
+#   - Piccole migliorie
 # ------------------------------------------------------------------------------------------------
 # Distribuito con licenza: CC BY-NC-SA 4.0
 # Formato leggibile da un essere umano: https://creativecommons.org/licenses/by-nc-sa/4.0/deed.it
@@ -43,11 +46,11 @@ automation:
     description: Quando Henrik ritorna a casa
     trigger:
       - platform: state
-        entity_id: person.henrik_sozzi
-        to: home
+        entity_id: binary_sensor.henrik_at_home
+        to: "on"
     condition:
       - condition: template
-        value_template: "{{ (as_timestamp(now()) - as_timestamp(state_attr('automation.persone_logica_henrik_ritorna_a_casa', 'last_triggered') | default(0)) | int > 1800)}}"  
+        value_template: "{{ (as_timestamp(now()) - as_timestamp(state_attr('automation.persone_logica_henrik_ritorna_a_casa', 'last_triggered') | default(0)) | int(0) > 1800)}}"  
     action:
       - service: input_boolean.turn_on
         entity_id: input_boolean.return_home_henrik
@@ -57,11 +60,11 @@ automation:
     description: Quando Antonella ritorna a casa
     trigger:
       - platform: state
-        entity_id: person.antonella
-        to: home
+        entity_id: binary_sensor.antonella_at_home
+        to: "on"
     condition:
       - condition: template
-        value_template: "{{ (as_timestamp(now()) - as_timestamp(state_attr('automation.persone_logica_antonella_ritorna_a_casa', 'last_triggered') | default(0)) | int > 1800)}}"  
+        value_template: "{{ (as_timestamp(now()) - as_timestamp(state_attr('automation.persone_logica_antonella_ritorna_a_casa', 'last_triggered') | default(0)) | int(0) > 1800)}}"  
     action:
       - service: input_boolean.turn_on
         entity_id: input_boolean.return_home_antonella
@@ -190,7 +193,7 @@ automation:
                           media_content_type: AMAZON_MUSIC
                   - conditions:
                       - condition: state
-                        entity_id: input_boolean.natale
+                        entity_id: input_boolean.natale_musica
                         state: 'on'
                     sequence:
                       - service: media_player.play_media
